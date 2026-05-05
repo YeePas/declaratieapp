@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dienstreizen Declaratie App</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1c2430;
+      --muted: #667085;
+      --line: #d9e0ea;
+      --accent: #2356d8;
+      --accent-soft: #eaf0ff;
+      --danger: #b42318;
+      --ok: #067647;
+      --shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    h1, h2, h3 { margin: 0 0 12px; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    .hero {
+      background: linear-gradient(135deg, #1f4dd8, #5b7cff);
+      color: white;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+    .hero-head { display:flex; align-items:center; gap:18px; }
+    .hero-logo {
+      width:92px; height:92px; flex:0 0 auto; border-radius:24px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+      padding: 10px;
+    }
+    .hero-copy { min-width:0; }
+    .hero p { color: rgba(255,255,255,0.92); max-width: 920px; }
+    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 18px; }
+    .tab-btn {
+      border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 800; cursor: pointer;
+      background: white; color: #344054; box-shadow: var(--shadow);
+    }
+    .tab-btn.active { background: var(--accent); color: white; }
+    .status {
+      margin-bottom: 16px; padding: 12px 14px; border-radius: 14px; font-size: 14px; display: none;
+      box-shadow: var(--shadow);
+    }
+    .status.show { display:block; }
+    .status.ok { background:#ecfdf3; color:var(--ok); }
+    .status.err { background:#fef3f2; color:var(--danger); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .grid { display:grid; grid-template-columns: 1.02fr 1.18fr; gap:20px; align-items:start; }
+    .card {
+      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px; border: 1px solid rgba(16,24,40,0.04);
+    }
+    .section-title { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
+    .pill {
+      display:inline-flex; align-items:center; gap:6px; padding: 7px 11px; background:#eff8ff;
+      color:#175cd3; border-radius:999px; font-size:12px; font-weight:700;
+    }
+    .fields { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+    .fields.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size:13px; font-weight:700; color:var(--muted); }
+    .label-with-icon { display:inline-flex; align-items:center; gap:8px; }
+    .label-icon {
+      width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:999px; background:#eef4ff; color:var(--accent);
+      border:1px solid #c7d7ff; flex:0 0 auto;
+    }
+    .label-icon svg { width:12px; height:12px; display:block; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea {
+      width:100%; border:1px solid var(--line); border-radius:14px; padding:12px 13px; background:white; color:var(--text);
+    }
+    textarea { min-height: 94px; resize: vertical; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+    button { border:0; border-radius:14px; padding: 11px 15px; font-weight: 800; cursor:pointer; }
+    .btn-primary { background: var(--accent); color:white; }
+    .btn-soft { background: var(--accent-soft); color: var(--accent); }
+    .btn-ghost { background:#eef2f6; color:#344054; }
+    .btn-danger { background:#fee4e2; color:var(--danger); }
+    .hint { font-size:13px; color:var(--muted); }
+    .route-link {
+      display:inline-flex; align-items:center; gap:8px; margin-top:10px;
+      color:var(--accent); font-size:13px; font-weight:700; text-decoration:none;
+    }
+    .route-link:hover { text-decoration:underline; }
+    .route-link[hidden] { display:none; }
+    .quick-row { margin-top: 8px; display:flex; flex-wrap:wrap; gap:8px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px; padding:10px 12px; border:1px solid #cfd7e5; border-radius:999px;
+      background:#f8faff; color:#3b4a60; font-weight:700; cursor:pointer;
+    }
+    .chip small { color:#667085; font-weight:700; }
+    .chip:hover { border-color:#9fb4ef; background:#eef4ff; }
+    .metrics { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:16px; }
+    .metric { padding:16px; border:1px solid var(--line); border-radius:14px; background:#fafcff; }
+    .metric .label { font-size:12px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+    .metric .value { font-size:24px; font-weight:800; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { padding:10px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.03em; position:sticky; top:0; background:white; }
+    .table-wrap { max-height: 540px; overflow:auto; }
+    .small-btn { padding:8px 10px; border-radius:10px; font-size:12px; }
+    .table-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .table-link { color:var(--accent); font-size:12px; font-weight:700; text-decoration:none; }
+    .table-link:hover { text-decoration:underline; }
+    .table-input, .table-select, .table-textarea {
+      width:100%; min-width:0; padding:8px 10px; border-radius:10px; font-size:12px;
+    }
+    .table-textarea { min-height:72px; }
+    .address-grid { display:grid; grid-template-columns: 360px 1fr; gap:20px; align-items:start; }
+    .address-item {
+      border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:12px; background:#fbfcff;
+    }
+    .address-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .address-name { font-weight:800; }
+    .address-meta { color:var(--muted); font-size:13px; margin-top:4px; }
+    .badge { display:inline-flex; padding:5px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#eef4ff; color:#2356d8; }
+    .toggle-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .inline-note { font-size:12px; color:var(--muted); }
+    .muted { color:var(--muted); }
+    .small { font-size:12px; }
+    .empty { padding: 18px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); background:#fcfdff; }
+    .spacer-top { margin-top:20px; }
+    .footer-note {
+      text-align:center; color:var(--muted); font-size:13px; margin: 22px 0 8px;
+    }
+    @media (max-width: 980px) {
+      .hero-head { align-items:flex-start; flex-direction:column; }
+      .hero-logo { width:78px; height:78px; }
+      .grid, .address-grid { grid-template-columns:1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fields, .fields.three { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-head">
+        <svg class="hero-logo" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoRoad" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="#163fbc"></stop>
+              <stop offset="100%" stop-color="#0f2f96"></stop>
+            </linearGradient>
+          </defs>
+          <rect x="8" y="8" width="104" height="104" rx="24" fill="rgba(255,255,255,0.08)"></rect>
+          <path d="M20 88C34 66 48 56 72 48C84 44 94 35 102 20" fill="none" stroke="url(#logoRoad)" stroke-width="15" stroke-linecap="round"></path>
+          <path d="M58 58C61 53 67 49 74 49H86C91 49 95 52 97 57L101 67H47L50 59C52 56 54 56 58 58Z" fill="#ffd166"></path>
+          <rect x="55" y="52" width="15" height="9" rx="3" fill="#f8fbff"></rect>
+          <rect x="72" y="52" width="16" height="9" rx="3" fill="#f8fbff"></rect>
+          <circle cx="58" cy="69" r="7" fill="#17305d"></circle>
+          <circle cx="90" cy="69" r="7" fill="#17305d"></circle>
+          <circle cx="58" cy="69" r="3" fill="#dce7ff"></circle>
+          <circle cx="90" cy="69" r="3" fill="#dce7ff"></circle>
+          <path d="M30 27c0-8 6-14 14-14c6 0 11 4 13 10c1-1 3-1 4-1c8 0 14 6 14 14s-6 14-14 14H44c-8 0-14-6-14-14c0-3 1-6 3-9Z" fill="#27c281"></path>
+          <path d="M50 23v16" stroke="#ffffff" stroke-width="5" stroke-linecap="round"></path>
+          <path d="M43 31h13" stroke="#ffffff" stroke-width="5" stroke-linecap="round"></path>
+          <circle cx="94" cy="31" r="12" fill="#ffe082"></circle>
+          <path d="M95 20c-4 2-6 6-6 11c0 6 4 11 10 12" fill="none" stroke="#1f8f5f" stroke-width="4" stroke-linecap="round"></path>
+          <path d="M97 24c-3-2-8-2-10 1c-2 4 1 6 5 7c4 1 6 3 5 6c-2 4-8 4-12 1" fill="none" stroke="#1f8f5f" stroke-width="4" stroke-linecap="round"></path>
+        </svg>
+        <div class="hero-copy">
+          <h1>Dienstreizen Declaratie App</h1>
+          <p>Voeg ritten toe, trek automatisch woon-werkverkeer af, beheer je adresboek en exporteer alles naar Excel of JSON-backup. Alles draait lokaal in je browser.</p>
+        </div>
+      </div>
+    </section>
+
+    <div id="statusBox" class="status"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="declareren">Declareren</button>
+      <button class="tab-btn" data-tab="adresboek">Adresboek</button>
+      <button class="tab-btn" data-tab="instellingen">Instellingen</button>
+    </div>
+
+    <section id="tab-declareren" class="tab-panel active">
+      <div class="grid">
+        <div>
+          <section class="card">
+            <div class="section-title">
+              <div>
+                <h2>Nieuwe rit toevoegen</h2>
+                <p>De kern van de app: invoeren, berekenen en opslaan.</p>
+              </div>
+              <span class="pill">Lokale app</span>
+            </div>
+
+            <div class="fields">
+              <div class="field">
+                <label for="tripDate">Datum</label>
+                <input id="tripDate" type="date" />
+              </div>
+              <div class="field">
+                <label for="tripType">Type</label>
+                <select id="tripType">
+                  <option value="dienstreis">Dienstreis</option>
+                  <option value="studiereis">Studiereis</option>
+                  <option value="gezondheidsreis">Gezondheidsreis</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="fields spacer-top">
+              <div class="field">
+                <label for="fromPostal" class="label-with-icon">
+                  <span class="label-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                  </span>
+                  <span>Start postcode + huisnummer</span>
+                </label>
+                <input id="fromPostal" placeholder="Bijv. 5431 SN 5" />
+              </div>
+              <div class="field">
+                <label for="fromCity">Start woonplaats</label>
+                <input id="fromCity" placeholder="Bijv. Cuijk" />
+              </div>
+              <div class="field full">
+                <div id="fromQuickChoices" class="quick-row"></div>
+              </div>
+              <div class="field">
+                <label for="toPostal" class="label-with-icon">
+                  <span class="label-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"></path>
+                    </svg>
+                  </span>
+                  <span>Stop postcode + huisnummer</span>
+                </label>
+                <input id="toPostal" placeholder="Bijv. 6533 HV 50" />
+              </div>
+              <div class="field">
+                <label for="toCity">Stop woonplaats</label>
+                <input id="toCity" placeholder="Bijv. Nijmegen" />
+              </div>
+              <div class="field full">
+                <div id="toQuickChoices" class="quick-row"></div>
+              </div>
+              <div class="field full">
+                <label for="purpose" class="label-with-icon">
+                  <span class="label-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 3h9l3 3v15l-6-3-6 3V3Zm2 2v12.76l4-2 4 2V7h-4V5H8Z"></path>
+                    </svg>
+                  </span>
+                  <span>Doel</span>
+                </label>
+                <textarea id="purpose" placeholder="Bijv. Werkbezoek, overleg, locatiebezoek"></textarea>
+              </div>
+            </div>
+
+            <div class="fields spacer-top">
+              <div class="field full">
+                <label for="deductionMode">Woon-werk automatisch aftrekken</label>
+                <select id="deductionMode">
+                  <option value="none" selected>Niet automatisch aftrekken</option>
+                  <option value="double">Volledige woon-werk aftrekken (2× de afstand)</option>
+                  <option value="full">Enkele reis aftrekken (1× de afstand)</option>
+                </select>
+              </div>
+            </div>
+            <p class="hint">De aftrek wordt toegepast zodra een rit start of eindigt op je thuisadres en niet je vaste standplaats betreft.</p>
+
+            <div class="actions">
+              <button class="btn-soft" id="calcDistanceBtn">Afstand berekenen</button>
+              <button class="btn-primary" id="addTripBtn">Rit opslaan</button>
+            </div>
+            <a id="googleMapsRouteLink" class="route-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Bekijk deze route in Google Maps</a>
+          </section>
+        </div>
+
+        <div>
+          <section class="card">
+            <div class="section-title">
+              <div>
+                <h2>Overzicht</h2>
+                <p>Deze ritten worden geëxporteerd naar het declaratiebestand.</p>
+              </div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><div class="label">Ritten</div><div class="value" id="metricTrips">0</div></div>
+              <div class="metric"><div class="label">Bruto km</div><div class="value" id="metricGross">0,0</div></div>
+              <div class="metric"><div class="label">Aftrek woon-werk</div><div class="value" id="metricDeduct">0,0</div></div>
+              <div class="metric"><div class="label">Netto km</div><div class="value" id="metricNet">0,0</div></div>
+            </div>
+            <div class="actions" style="margin-bottom:14px;">
+              <button class="btn-primary" id="exportBtn">Exporteer naar Excel</button>
+              <button class="btn-danger" id="clearBtn">Wis alle ritten</button>
+              <input id="importJsonInput" type="file" accept="application/json" style="display:none;" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Van</th>
+                    <th>Naar</th>
+                    <th>Doel</th>
+                    <th>Bruto km</th>
+                    <th>WW aftrek</th>
+                    <th>Netto km</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="tripTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-adresboek" class="tab-panel">
+      <div class="address-grid">
+        <section class="card">
+          <div class="section-title">
+            <div>
+              <h2>Adres toevoegen</h2>
+              <p>Gebruik labels zoals Thuis, Werk, Kantoor of Cliënt 1.</p>
+            </div>
+          </div>
+          <div class="fields">
+            <div class="field full">
+              <label for="addressLabel">Label</label>
+              <input id="addressLabel" placeholder="Bijv. Kantoor of Cliënt 1" />
+            </div>
+            <div class="field">
+              <label for="addressPostal">Postcode + huisnummer</label>
+              <input id="addressPostal" placeholder="Bijv. 5431 SN 5" />
+            </div>
+            <div class="field">
+              <label for="addressCity">Woonplaats</label>
+              <input id="addressCity" placeholder="Bijv. Cuijk" />
+            </div>
+            <div class="field full">
+              <label for="addressCategory">Type</label>
+              <select id="addressCategory">
+                <option value="algemeen">Algemeen</option>
+                <option value="thuis">Thuis</option>
+                <option value="werkplek_client">Werkplek Client</option>
+                <option value="werkplek">Werkplek</option>
+                <option value="thuisbezoek_client">Thuisbezoek Client</option>
+              </select>
+            </div>
+          </div>
+          <div class="toggle-row spacer-top">
+            <label><input id="addressFavorite" type="checkbox" /> Favoriet / snelle keuze</label>
+          </div>
+          <div class="actions">
+            <button class="btn-primary" id="saveAddressBtn">Adres opslaan</button>
+            <button class="btn-ghost" id="exportAddressesBtn">Exporteer adressen</button>
+            <button class="btn-danger" id="clearAddressesBtn">Wis adressen</button>
+          </div>
+          <p class="hint">De 5 snelkeuzes in het ritformulier komen uit je favorieten. Als er minder dan 5 favorieten zijn, worden andere gelabelde adressen aangevuld.</p>
+        </section>
+
+        <section class="card">
+          <div class="section-title">
+            <div>
+              <h2>Adresboek</h2>
+              <p>Beheer je adressen zonder afleiding in het declaratiescherm.</p>
+            </div>
+          </div>
+          <div id="addressList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="tab-instellingen" class="tab-panel">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>Instellingen</h2>
+            <p>Deze waarden worden lokaal opgeslagen en ook meegenomen in je JSON-backup.</p>
+          </div>
+          <span class="pill">Local storage</span>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label for="homePostal">Thuis adres / postcode + huisnummer</label>
+            <input id="homePostal" placeholder="Bijv. Winselingseweg 4L of 5431 SN 5" />
+          </div>
+          <div class="field">
+            <label for="homeCity">Thuis plaats</label>
+            <input id="homeCity" placeholder="Bijv. Nijmegen" />
+          </div>
+          <div class="field">
+            <label for="workPostal">Standplaats adres / postcode + huisnummer</label>
+            <input id="workPostal" placeholder="Bijv. 6533 HV 50 of Winselingseweg 4L" />
+          </div>
+          <div class="field">
+            <label for="workCity">Standplaats plaats</label>
+            <input id="workCity" placeholder="Bijv. Cuijk" />
+          </div>
+          <div class="field">
+            <label for="commuteDistance">Enkele reis woon-werk (km)</label>
+            <input id="commuteDistance" type="number" min="0" step="0.1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="rate">Tarief dienstreizen (€ per km)</label>
+            <input id="rate" type="number" min="0" step="0.01" value="0.30" />
+          </div>
+          <div class="field full">
+            <label for="googleMapsApiKey">Google Maps API key</label>
+            <input id="googleMapsApiKey" type="password" placeholder="Voer je Google Maps API key in" autocomplete="off" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn-soft" id="calcCommuteBtn">Bereken woon-werkafstand automatisch</button>
+          <button class="btn-primary" id="saveSettingsBtn">Instellingen opslaan</button>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" id="exportJsonBtn">Backup JSON</button>
+          <button class="btn-ghost" id="importJsonBtn">Backup terugzetten</button>
+        </div>
+        <p class="hint">De automatische berekening gebruikt thuisadres en standplaats via Google Maps Routes API. Zorg dat je key toegang heeft tot de Routes API.</p>
+        <p class="hint">Firebase-sync: vul de FIREBASE_CONFIG waarden in dit HTML-bestand in om opslag in Firestore te activeren.</p>
+      </section>
+    </section>
+    <p class="footer-note">Gemaakt door Warenhuis Willemsen</p>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'declaratie_app_state_v6';
+    const LEGACY_KEYS = ['declaratie_app_state_v5','declaratie_app_state_v4','declaratie_app_state_v3','declaratie_app_state_v2'];
+    const today = new Date().toISOString().slice(0, 10);
+
+    const els = {
+      statusBox: document.getElementById('statusBox'),
+      tripDate: document.getElementById('tripDate'),
+      tripType: document.getElementById('tripType'),
+      fromPostal: document.getElementById('fromPostal'),
+      fromCity: document.getElementById('fromCity'),
+      toPostal: document.getElementById('toPostal'),
+      toCity: document.getElementById('toCity'),
+      purpose: document.getElementById('purpose'),
+      deductionMode: document.getElementById('deductionMode'),
+      googleMapsRouteLink: document.getElementById('googleMapsRouteLink'),
+      fromQuickChoices: document.getElementById('fromQuickChoices'),
+      toQuickChoices: document.getElementById('toQuickChoices'),
+      homePostal: document.getElementById('homePostal'),
+      homeCity: document.getElementById('homeCity'),
+      workPostal: document.getElementById('workPostal'),
+      workCity: document.getElementById('workCity'),
+      commuteDistance: document.getElementById('commuteDistance'),
+      rate: document.getElementById('rate'),
+      googleMapsApiKey: document.getElementById('googleMapsApiKey'),
+      metricTrips: document.getElementById('metricTrips'),
+      metricGross: document.getElementById('metricGross'),
+      metricDeduct: document.getElementById('metricDeduct'),
+      metricNet: document.getElementById('metricNet'),
+      tripTableBody: document.getElementById('tripTableBody'),
+      addressLabel: document.getElementById('addressLabel'),
+      addressPostal: document.getElementById('addressPostal'),
+      addressCity: document.getElementById('addressCity'),
+      addressCategory: document.getElementById('addressCategory'),
+      addressFavorite: document.getElementById('addressFavorite'),
+      addressList: document.getElementById('addressList'),
+      importJsonInput: document.getElementById('importJsonInput')
+    };
+
+    // Firebase webconfig — waarden zijn ingevuld vanuit jouw Firebase project.
+    const FIREBASE_CONFIG = {
+      apiKey: 'AIzaSyDrZ3ssO8RNKDapLk4CD2vy76pu-N9f_Ew',
+      authDomain: 'declaratieapp-e7154.firebaseapp.com',
+      projectId: 'declaratieapp-e7154',
+      appId: '1:123201899783:web:4cf523d3a0fc481dd989a2'
+    };
+    const FIRESTORE_COLLECTION = 'declaratieApp';
+    const FIRESTORE_DOCUMENT = 'sharedState';
+
+    let firestoreDb = null;
+    let firebaseSyncEnabled = false;
+    let remoteSaveTimer = null;
+    let remoteSaveInProgress = false;
+
+    let state = loadState();
+    let draftTripKm = 0;
+    let editingTripId = null;
+    let editingAddressId = null;
+
+    els.tripDate.value = today;
+    initializeApp();
+
+    function defaultState() {
+      return {
+        settings: {
+          homeAddress: '',
+          workAddress: '',
+          commuteDistance: 0,
+          rate: 0.30,
+          deductionMode: 'none',
+          googleMapsApiKey: ''
+        },
+        trips: [],
+        addressBook: []
+      };
+    }
+
+    function loadState() {
+      const base = defaultState();
+      let parsed = null;
+      try { parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) {}
+      if (!parsed) {
+        for (const key of LEGACY_KEYS) {
+          try {
+            const legacy = JSON.parse(localStorage.getItem(key));
+            if (legacy && legacy.settings && Array.isArray(legacy.trips)) { parsed = legacy; break; }
+          } catch (e) {}
+        }
+      }
+      if (!parsed) return base;
+      return normalizeState(parsed);
+    }
+
+    function normalizeDeductionMode(mode) {
+      return ['none', 'double', 'full'].includes(mode) ? mode : 'none';
+    }
+
+    function hasFirebaseConfig() {
+      return !!(
+        FIREBASE_CONFIG.apiKey &&
+        FIREBASE_CONFIG.authDomain &&
+        FIREBASE_CONFIG.projectId &&
+        FIREBASE_CONFIG.appId
+      );
+    }
+
+    async function initializeFirebase() {
+      if (!hasFirebaseConfig()) {
+        firebaseSyncEnabled = false;
+        return false;
+      }
+
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        firestoreDb = firebase.firestore();
+        firebaseSyncEnabled = true;
+        return true;
+      } catch (error) {
+        firebaseSyncEnabled = false;
+        console.error('Firebase initialisatie mislukt:', error);
+        showStatus('Firebase kon niet worden geïnitialiseerd. De app werkt lokaal verder.', 'err');
+        return false;
+      }
+    }
+
+    async function initializeApp() {
+      wireEvents();
+      hydrateForm();
+      renderAll();
+      updateGoogleMapsRouteLink();
+
+      const firebaseReady = await initializeFirebase();
+      if (!firebaseReady) return;
+
+      try {
+        const remoteState = await loadRemoteState();
+        if (remoteState) {
+          state = normalizeState(remoteState);
+          persistLocalOnly();
+          renderAll();
+          showStatus('Gegevens geladen vanuit Firebase.', 'ok');
+          return;
+        }
+
+        queueRemoteSave(true);
+        showStatus('Firebase gekoppeld. Eerste synchronisatie gestart.', 'ok');
+      } catch (error) {
+        console.error('Firebase laden mislukt:', error);
+        showStatus('Firebase is gekoppeld, maar gegevens laden mislukte. Lokale data blijft actief.', 'err');
+      }
+    }
+
+    function wireEvents() {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+      document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+      document.getElementById('calcCommuteBtn').addEventListener('click', calculateCommuteDistance);
+      document.getElementById('calcDistanceBtn').addEventListener('click', calculateDistanceOnly);
+      document.getElementById('addTripBtn').addEventListener('click', addTrip);
+      document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+      document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+      document.getElementById('exportAddressesBtn').addEventListener('click', exportAddressesJson);
+      document.getElementById('clearAddressesBtn').addEventListener('click', clearAddresses);
+      document.getElementById('importJsonBtn').addEventListener('click', () => els.importJsonInput.click());
+      document.getElementById('clearBtn').addEventListener('click', clearTrips);
+      document.getElementById('saveAddressBtn').addEventListener('click', saveAddressBookItem);
+      els.importJsonInput.addEventListener('change', importJson);
+      [els.fromPostal, els.fromCity, els.toPostal, els.toCity].forEach(input => {
+        input.addEventListener('input', () => {
+          draftTripKm = 0;
+          updateGoogleMapsRouteLink();
+        });
+      });
+      els.deductionMode.addEventListener('change', () => {
+        state.settings.deductionMode = normalizeDeductionMode(els.deductionMode.value);
+        persist();
+      });
+    }
+
+    function normalizeState(raw) {
+      const base = defaultState();
+      const merged = {
+        settings: {
+          ...base.settings,
+          ...(raw.settings || {})
+        },
+        trips: Array.isArray(raw.trips) ? raw.trips.map(trip => ({
+          id: trip.id || crypto.randomUUID(),
+          date: trip.date || today,
+          fromAddress: trip.fromAddress || '',
+          toAddress: trip.toAddress || '',
+          purpose: trip.purpose || '',
+          type: trip.type || 'dienstreis',
+          grossKm: Number(trip.grossKm || 0),
+          deductionKm: Number(trip.deductionKm || 0),
+          netKm: Number(trip.netKm || 0)
+        })) : [],
+        addressBook: Array.isArray(raw.addressBook) ? raw.addressBook.map(item => ({
+          id: item.id || crypto.randomUUID(),
+          label: item.label || '',
+          address: item.address || '',
+          category: item.category || 'algemeen',
+          favorite: !!item.favorite
+        })) : []
+      };
+
+      merged.settings.deductionMode = normalizeDeductionMode(merged.settings.deductionMode);
+
+      addSystemAddresses(merged);
+      return merged;
+    }
+
+    function addSystemAddresses(targetState) {
+      upsertAddress(targetState.addressBook, {
+        label: 'Thuis',
+        address: targetState.settings.homeAddress || '',
+        category: 'thuis',
+        favorite: true
+      }, true);
+      upsertAddress(targetState.addressBook, {
+        label: 'Werk',
+        address: targetState.settings.workAddress || '',
+        category: 'werk',
+        favorite: true
+      }, true);
+    }
+
+    function persist() {
+      persistLocalOnly();
+      queueRemoteSave();
+    }
+
+    function persistLocalOnly() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function queueRemoteSave(immediate = false) {
+      if (!firebaseSyncEnabled || !firestoreDb) return;
+      if (remoteSaveTimer) {
+        clearTimeout(remoteSaveTimer);
+        remoteSaveTimer = null;
+      }
+      if (immediate) {
+        void saveRemoteState();
+        return;
+      }
+      remoteSaveTimer = setTimeout(() => {
+        remoteSaveTimer = null;
+        void saveRemoteState();
+      }, 500);
+    }
+
+    async function loadRemoteState() {
+      if (!firebaseSyncEnabled || !firestoreDb) return null;
+      const doc = await firestoreDb.collection(FIRESTORE_COLLECTION).doc(FIRESTORE_DOCUMENT).get();
+      if (!doc.exists) return null;
+      const data = doc.data();
+      if (!data || !data.state) return null;
+      return data.state;
+    }
+
+    async function saveRemoteState() {
+      if (!firebaseSyncEnabled || !firestoreDb || remoteSaveInProgress) return;
+      remoteSaveInProgress = true;
+      try {
+        await firestoreDb.collection(FIRESTORE_COLLECTION).doc(FIRESTORE_DOCUMENT).set({
+          state,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (error) {
+        console.error('Opslaan naar Firebase mislukt:', error);
+      } finally {
+        remoteSaveInProgress = false;
+      }
+    }
+
+    function hydrateForm() {
+      const home = splitAddress(state.settings.homeAddress || '');
+      const work = splitAddress(state.settings.workAddress || '');
+      els.homePostal.value = home.postal || '';
+      els.homeCity.value = home.city || '';
+      els.workPostal.value = work.postal || '';
+      els.workCity.value = work.city || '';
+      els.commuteDistance.value = state.settings.commuteDistance || '';
+      els.rate.value = state.settings.rate ?? 0.30;
+      els.googleMapsApiKey.value = state.settings.googleMapsApiKey || '';
+      els.deductionMode.value = normalizeDeductionMode(state.settings.deductionMode);
+    }
+
+    function setActiveTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === `tab-${tabName}`));
+    }
+
+    function showStatus(message, type = 'ok') {
+      els.statusBox.textContent = message;
+      els.statusBox.className = `status show ${type}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function clearStatus() {
+      els.statusBox.className = 'status';
+      els.statusBox.textContent = '';
+    }
+
+    function normalizeAddress(value) {
+      return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    }
+
+    function fmtNumber(value) {
+      return Number(value || 0).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      return new Date(dateStr + 'T00:00:00').toLocaleDateString('nl-NL');
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function splitAddress(address) {
+      const raw = String(address || '').replace(/\s+/g, ' ').trim();
+      if (!raw) return { postal: '', city: '' };
+
+      const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) return { postal: parts[0], city: parts.slice(1).join(', ') };
+
+      const match = raw.match(/^(\d{4}\s?[A-Za-z]{2})\s+(.+)$/);
+      if (!match) return { postal: raw, city: '' };
+
+      const postcode = match[1].toUpperCase().replace(/\s+/, ' ');
+      const remainder = match[2].trim();
+      const remainderMatch = remainder.match(/^(\d+\S*(?:\s+(?:[a-z]{1,4}|[A-Z]))?)(?:\s+(.*))?$/);
+      if (!remainderMatch) return { postal: raw, city: '' };
+
+      const houseNumber = remainderMatch[1].trim();
+      const city = (remainderMatch[2] || '').trim();
+      return {
+        postal: `${postcode} ${houseNumber}`.trim(),
+        city
+      };
+    }
+
+    function buildAddress(postal, city) {
+      const normalizedPostal = String(postal || '').replace(/\s+/g, ' ').trim();
+      const normalizedCity = String(city || '').replace(/\s+/g, ' ').trim();
+      if (normalizedPostal && normalizedCity) return `${normalizedPostal}, ${normalizedCity}`;
+      return normalizedPostal || normalizedCity || '';
+    }
+
+    function currentTripFromAddress() {
+      return buildAddress(els.fromPostal.value, els.fromCity.value);
+    }
+
+    function currentTripToAddress() {
+      return buildAddress(els.toPostal.value, els.toCity.value);
+    }
+
+    function currentHomeAddress() {
+      return buildAddress(els.homePostal.value, els.homeCity.value);
+    }
+
+    function currentWorkAddress() {
+      return buildAddress(els.workPostal.value, els.workCity.value);
+    }
+
+    function missingTripAddressFields(prefix, postal, city) {
+      const missing = [];
+      if (!String(postal || '').trim()) missing.push(`${prefix} postcode + huisnummer`);
+      if (!String(city || '').trim()) missing.push(`${prefix} woonplaats`);
+      return missing;
+    }
+
+    function missingAddressParts(prefix, postal, city) {
+      const missing = [];
+      if (!String(postal || '').trim()) missing.push(`${prefix} adres / postcode + huisnummer`);
+      if (!String(city || '').trim()) missing.push(`${prefix} plaats`);
+      return missing;
+    }
+
+    function setTripAddress(target, address) {
+      const parts = splitAddress(address);
+      if (target === 'from') {
+        els.fromPostal.value = parts.postal;
+        els.fromCity.value = parts.city;
+      }
+      if (target === 'to') {
+        els.toPostal.value = parts.postal;
+        els.toCity.value = parts.city;
+      }
+      draftTripKm = 0;
+      updateGoogleMapsRouteLink();
+    }
+
+    function setSettingsAddress(target, address) {
+      const parts = splitAddress(address);
+      if (target === 'home') {
+        els.homePostal.value = parts.postal;
+        els.homeCity.value = parts.city;
+      }
+      if (target === 'work') {
+        els.workPostal.value = parts.postal;
+        els.workCity.value = parts.city;
+      }
+    }
+
+    function upsertAddress(list, item, silent = false) {
+      if (!item.address || !String(item.address).trim()) return;
+      const normalized = normalizeAddress(item.address);
+      const existing = list.find(entry => normalizeAddress(entry.address) === normalized || (item.label && entry.label.toLowerCase() === String(item.label).trim().toLowerCase() && entry.address === item.address));
+      if (existing) {
+        existing.label = item.label || existing.label;
+        existing.address = item.address || existing.address;
+        existing.category = item.category || existing.category;
+        existing.favorite = item.favorite ?? existing.favorite;
+      } else {
+        list.push({
+          id: crypto.randomUUID(),
+          label: item.label || item.address,
+          address: item.address,
+          category: item.category || 'algemeen',
+          favorite: !!item.favorite
+        });
+      }
+      if (!silent) persist();
+    }
+
+    function saveSettings() {
+      state.settings.homeAddress = currentHomeAddress();
+      state.settings.workAddress = currentWorkAddress();
+      state.settings.commuteDistance = Number(els.commuteDistance.value || 0);
+      state.settings.rate = Number(els.rate.value || 0.30);
+      state.settings.googleMapsApiKey = els.googleMapsApiKey.value.trim();
+      state.settings.deductionMode = normalizeDeductionMode(els.deductionMode.value);
+      addSystemAddresses(state);
+      persist();
+      renderQuickChoices();
+      renderAddressBook();
+      showStatus('Instellingen opgeslagen.', 'ok');
+    }
+
+    async function routeKm(fromAddress, toAddress) {
+      const apiKey = (state.settings.googleMapsApiKey || '').trim();
+      if (!apiKey) throw new Error('Vul eerst een Google Maps API key in bij Instellingen.');
+
+      const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'routes.distanceMeters'
+        },
+        body: JSON.stringify({
+          origin: { address: fromAddress },
+          destination: { address: toAddress },
+          travelMode: 'DRIVE',
+          computeAlternativeRoutes: false,
+          languageCode: 'nl-NL',
+          regionCode: 'nl',
+          units: 'METRIC'
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        const message = data?.error?.message || 'Route berekenen via Google Maps is mislukt.';
+        throw new Error(message);
+      }
+      const route = data.routes && data.routes[0];
+      if (!route) throw new Error('Geen route gevonden.');
+      return Math.round(((route.distanceMeters || 0) / 1000) * 10) / 10;
+    }
+
+    async function calculateCommuteDistance() {
+      try {
+        const home = currentHomeAddress();
+        const work = currentWorkAddress();
+        const missing = [
+          ...missingTripAddressFields('thuis', els.homePostal.value, els.homeCity.value),
+          ...missingTripAddressFields('standplaats', els.workPostal.value, els.workCity.value)
+        ];
+        if (missing.length) throw new Error(`Ontbreekt: ${missing.join(', ')}.`);
+        showStatus('Woon-werkafstand wordt berekend...', 'ok');
+        const km = await routeKm(home, work);
+        els.commuteDistance.value = km;
+        state.settings.commuteDistance = km;
+        persist();
+        showStatus(`Woon-werkafstand berekend: ${fmtNumber(km)} km enkele reis.`, 'ok');
+      } catch (error) {
+        showStatus(error.message, 'err');
+      }
+    }
+
+    function currentDeductionMode() {
+      return normalizeDeductionMode(els.deductionMode.value || state.settings.deductionMode);
+    }
+
+    function googleMapsRouteUrl(fromAddress, toAddress) {
+      return `https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${encodeURIComponent(fromAddress)}&destination=${encodeURIComponent(toAddress)}`;
+    }
+
+    function updateGoogleMapsRouteLink() {
+      const fromAddress = currentTripFromAddress();
+      const toAddress = currentTripToAddress();
+      if (!fromAddress || !toAddress) {
+        els.googleMapsRouteLink.hidden = true;
+        els.googleMapsRouteLink.removeAttribute('href');
+        return;
+      }
+      els.googleMapsRouteLink.href = googleMapsRouteUrl(fromAddress, toAddress);
+      els.googleMapsRouteLink.hidden = false;
+    }
+
+    function computeDeduction(fromAddress, toAddress) {
+      const commuteKm = Number(state.settings.commuteDistance || 0);
+      const mode = currentDeductionMode();
+      if (!commuteKm || mode === 'none') return 0;
+      const home = normalizeAddress(state.settings.homeAddress);
+      const work = normalizeAddress(state.settings.workAddress);
+      const from = normalizeAddress(fromAddress);
+      const to = normalizeAddress(toAddress);
+      const eligible = (from === home && to !== work) || (to === home && from !== work);
+      if (!eligible) return 0;
+      if (mode === 'half') return Math.round((commuteKm / 2) * 10) / 10;
+      if (mode === 'double') return Math.round((commuteKm * 2) * 10) / 10;
+      return Math.round(commuteKm * 10) / 10;
+    }
+
+    async function calculateDistanceOnly() {
+      try {
+        const from = currentTripFromAddress();
+        const to = currentTripToAddress();
+        const missing = [
+          ...missingTripAddressFields('start', els.fromPostal.value, els.fromCity.value),
+          ...missingTripAddressFields('stop', els.toPostal.value, els.toCity.value)
+        ];
+        if (missing.length) throw new Error(`Ontbreekt: ${missing.join(', ')}.`);
+        showStatus('Afstand wordt berekend...', 'ok');
+        const km = await routeKm(from, to);
+        draftTripKm = km;
+        const deduction = computeDeduction(from, to);
+        showStatus(`Afstand berekend: ${fmtNumber(km)} km. Woon-werk aftrek: ${fmtNumber(deduction)} km.`, 'ok');
+      } catch (error) {
+        showStatus(error.message, 'err');
+      }
+    }
+
+    async function addTrip() {
+      try {
+        saveSettings();
+        const date = els.tripDate.value;
+        const fromAddress = currentTripFromAddress();
+        const toAddress = currentTripToAddress();
+        const purpose = els.purpose.value.trim();
+        const type = els.tripType.value;
+        const missingFields = [];
+        if (!date) missingFields.push('datum');
+        missingFields.push(...missingTripAddressFields('start', els.fromPostal.value, els.fromCity.value));
+        missingFields.push(...missingTripAddressFields('stop', els.toPostal.value, els.toCity.value));
+        if (missingFields.length) {
+          throw new Error(`Ontbreekt: ${missingFields.join(', ')}.`);
+        }
+
+        let grossKm = Number(draftTripKm || 0);
+        if (!grossKm) {
+          showStatus('Afstand wordt berekend...', 'ok');
+          grossKm = await routeKm(fromAddress, toAddress);
+        }
+
+        const deductionKm = computeDeduction(fromAddress, toAddress);
+        const netKm = Math.max(0, Math.round((grossKm - deductionKm) * 10) / 10);
+
+        state.trips.push({
+          id: crypto.randomUUID(),
+          date,
+          fromAddress,
+          toAddress,
+          purpose,
+          type,
+          grossKm: Math.round(grossKm * 10) / 10,
+          deductionKm: Math.round(deductionKm * 10) / 10,
+          netKm
+        });
+
+        suggestAddressFromTrip(fromAddress, 'algemeen');
+        suggestAddressFromTrip(toAddress, 'algemeen');
+        persist();
+        renderAll();
+        resetTripForm();
+        showStatus('Rit opgeslagen.', 'ok');
+      } catch (error) {
+        showStatus(error.message, 'err');
+      }
+    }
+
+    function suggestAddressFromTrip(address, category) {
+      if (!address) return;
+      const existing = state.addressBook.find(item => normalizeAddress(item.address) === normalizeAddress(address));
+      if (!existing) {
+        upsertAddress(state.addressBook, {
+          label: address,
+          address,
+          category: category || 'algemeen',
+          favorite: false
+        });
+      }
+    }
+
+    function resetTripForm() {
+      draftTripKm = 0;
+      els.fromPostal.value = '';
+      els.fromCity.value = '';
+      els.toPostal.value = '';
+      els.toCity.value = '';
+      els.purpose.value = '';
+      els.tripDate.value = today;
+      els.tripType.value = 'dienstreis';
+      updateGoogleMapsRouteLink();
+    }
+
+    function saveAddressBookItem() {
+      const label = els.addressLabel.value.trim();
+      const postal = els.addressPostal.value.trim();
+      const city = els.addressCity.value.trim();
+      const address = buildAddress(postal, city);
+      const category = els.addressCategory.value;
+      const favorite = els.addressFavorite.checked;
+      const missing = [];
+      if (!label) missing.push('label');
+      missing.push(...missingAddressParts('adres', postal, city));
+      if (missing.length) {
+        showStatus(`Ontbreekt: ${missing.join(', ')}.`, 'err');
+        return;
+      }
+      upsertAddress(state.addressBook, { label, address, category, favorite });
+      renderAddressBook();
+      renderQuickChoices();
+      els.addressLabel.value = '';
+      els.addressPostal.value = '';
+      els.addressCity.value = '';
+      els.addressCategory.value = 'algemeen';
+      els.addressFavorite.checked = false;
+      showStatus('Adres opgeslagen in het adresboek.', 'ok');
+    }
+
+    function removeAddress(id) {
+      const item = state.addressBook.find(entry => entry.id === id);
+      if (!item) return;
+      if ((item.category === 'thuis' || item.category === 'werk') && (item.address === state.settings.homeAddress || item.address === state.settings.workAddress)) {
+        showStatus('Verwijder eerst of wijzig het gekoppelde thuis- of werkadres in Instellingen.', 'err');
+        return;
+      }
+      state.addressBook = state.addressBook.filter(entry => entry.id !== id);
+      persist();
+      renderAddressBook();
+      renderQuickChoices();
+      showStatus('Adres verwijderd.', 'ok');
+    }
+
+    function startEditAddress(id) {
+      editingAddressId = id;
+      renderAddressBook();
+    }
+
+    function cancelEditAddress() {
+      editingAddressId = null;
+      renderAddressBook();
+    }
+
+    function saveAddressEdit(id, card) {
+      const item = state.addressBook.find(entry => entry.id === id);
+      if (!item) return;
+
+      const label = card.querySelector('[data-field="label"]').value.trim();
+      const postal = card.querySelector('[data-field="postal"]').value.trim();
+      const city = card.querySelector('[data-field="city"]').value.trim();
+      const address = buildAddress(postal, city);
+      const category = card.querySelector('[data-field="category"]').value;
+      const favorite = card.querySelector('[data-field="favorite"]').checked;
+      const missing = [];
+      if (!label) missing.push('label');
+      missing.push(...missingAddressParts('adres', postal, city));
+      if (missing.length) {
+        showStatus(`Ontbreekt: ${missing.join(', ')}.`, 'err');
+        return;
+      }
+
+      const previousAddress = item.address;
+      item.label = label;
+      item.address = address;
+      item.category = category;
+      item.favorite = favorite;
+
+      if (state.settings.homeAddress === previousAddress) state.settings.homeAddress = address;
+      if (state.settings.workAddress === previousAddress) state.settings.workAddress = address;
+
+      editingAddressId = null;
+      addSystemAddresses(state);
+      persist();
+      renderAll();
+      showStatus('Adres bijgewerkt.', 'ok');
+    }
+
+    function useAddress(address, target) {
+      setTripAddress(target, address);
+      setActiveTab('declareren');
+    }
+
+    function setAsHome(address) {
+      setSettingsAddress('home', address);
+      saveSettings();
+      setActiveTab('instellingen');
+    }
+
+    function setAsWork(address) {
+      setSettingsAddress('work', address);
+      saveSettings();
+      setActiveTab('instellingen');
+    }
+
+    function toggleFavorite(id) {
+      const item = state.addressBook.find(entry => entry.id === id);
+      if (!item) return;
+      item.favorite = !item.favorite;
+      persist();
+      renderAddressBook();
+      renderQuickChoices();
+    }
+
+    function getQuickAddresses() {
+      return state.addressBook
+        .filter(item => item.address && item.label)
+        .sort((a, b) => {
+          if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+          const aPriority = priorityForCategory(a.category);
+          const bPriority = priorityForCategory(b.category);
+          if (aPriority !== bPriority) return aPriority - bPriority;
+          return a.label.localeCompare(b.label, 'nl');
+        })
+        .slice(0, 5);
+    }
+
+    function priorityForCategory(category) {
+      const map = { thuis: 0, werkplek: 1, werkplek_client: 2, thuisbezoek_client: 3, algemeen: 4 };
+      return map[category] ?? 99;
+    }
+
+    function renderQuickChoices() {
+      const quick = getQuickAddresses();
+      [els.fromQuickChoices, els.toQuickChoices].forEach(container => {
+        container.innerHTML = '';
+        quick.forEach(item => {
+          const chip = document.createElement('button');
+          chip.className = 'chip';
+          chip.type = 'button';
+          chip.innerHTML = `<span>${escapeHtml(item.label)}</span>`;
+          chip.title = item.address;
+          chip.addEventListener('click', () => {
+            if (container === els.fromQuickChoices) setTripAddress('from', item.address);
+            if (container === els.toQuickChoices) setTripAddress('to', item.address);
+          });
+          container.appendChild(chip);
+        });
+      });
+    }
+
+    function renderAddressBook() {
+      els.addressList.innerHTML = '';
+      const entries = state.addressBook.slice().sort((a,b) => a.label.localeCompare(b.label, 'nl'));
+      if (!entries.length) {
+        els.addressList.innerHTML = '<div class="empty">Nog geen adressen opgeslagen.</div>';
+        return;
+      }
+      entries.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'address-item';
+        if (editingAddressId === item.id) {
+          const parts = splitAddress(item.address);
+          card.innerHTML = `
+            <div class="fields">
+              <div class="field full">
+                <label>Label</label>
+                <input class="table-input" data-field="label" value="${escapeHtml(item.label)}" />
+              </div>
+              <div class="field">
+                <label>Postcode + huisnummer</label>
+                <input class="table-input" data-field="postal" value="${escapeHtml(parts.postal)}" />
+              </div>
+              <div class="field">
+                <label>Woonplaats</label>
+                <input class="table-input" data-field="city" value="${escapeHtml(parts.city)}" />
+              </div>
+              <div class="field full">
+                <label>Type</label>
+                <select class="table-select" data-field="category">
+                  <option value="algemeen"${item.category === 'algemeen' ? ' selected' : ''}>Algemeen</option>
+                  <option value="thuis"${item.category === 'thuis' ? ' selected' : ''}>Thuis</option>
+                  <option value="werkplek_client"${item.category === 'werkplek_client' ? ' selected' : ''}>Werkplek Client</option>
+                  <option value="werkplek"${item.category === 'werkplek' ? ' selected' : ''}>Werkplek</option>
+                  <option value="thuisbezoek_client"${item.category === 'thuisbezoek_client' ? ' selected' : ''}>Thuisbezoek Client</option>
+                </select>
+              </div>
+            </div>
+            <div class="toggle-row spacer-top">
+              <label><input data-field="favorite" type="checkbox"${item.favorite ? ' checked' : ''} /> Favoriet / snelle keuze</label>
+            </div>
+            <div class="actions">
+              <button class="btn-primary small-btn" data-action="save">Opslaan</button>
+              <button class="btn-ghost small-btn" data-action="cancel">Annuleren</button>
+            </div>
+          `;
+          card.querySelector('[data-action="save"]').addEventListener('click', () => saveAddressEdit(item.id, card));
+          card.querySelector('[data-action="cancel"]').addEventListener('click', cancelEditAddress);
+        } else {
+          card.innerHTML = `
+            <div class="address-top">
+              <div>
+                <div class="address-name">${escapeHtml(item.label)}</div>
+                <div class="address-meta">${escapeHtml(item.address)}</div>
+              </div>
+              <div class="badge">${escapeHtml(item.category || 'algemeen')}</div>
+            </div>
+            <div class="actions">
+              <button class="btn-soft small-btn" data-action="from">Als vertrek</button>
+              <button class="btn-soft small-btn" data-action="to">Als bestemming</button>
+              <button class="btn-ghost small-btn" data-action="home">Maak thuisadres</button>
+              <button class="btn-ghost small-btn" data-action="work">Maak standplaats</button>
+              <button class="btn-soft small-btn" data-action="edit">Bewerk</button>
+              <button class="btn-ghost small-btn" data-action="favorite">${item.favorite ? 'Favoriet uit' : 'Favoriet aan'}</button>
+              <button class="btn-danger small-btn" data-action="delete">Verwijder</button>
+            </div>
+          `;
+          card.querySelector('[data-action="from"]').addEventListener('click', () => useAddress(item.address, 'from'));
+          card.querySelector('[data-action="to"]').addEventListener('click', () => useAddress(item.address, 'to'));
+          card.querySelector('[data-action="home"]').addEventListener('click', () => setAsHome(item.address));
+          card.querySelector('[data-action="work"]').addEventListener('click', () => setAsWork(item.address));
+          card.querySelector('[data-action="edit"]').addEventListener('click', () => startEditAddress(item.id));
+          card.querySelector('[data-action="favorite"]').addEventListener('click', () => toggleFavorite(item.id));
+          card.querySelector('[data-action="delete"]').addEventListener('click', () => removeAddress(item.id));
+        }
+        els.addressList.appendChild(card);
+      });
+    }
+
+    function removeTrip(id) {
+      state.trips = state.trips.filter(trip => trip.id !== id);
+      if (editingTripId === id) editingTripId = null;
+      persist();
+      renderTrips();
+      showStatus('Rit verwijderd.', 'ok');
+    }
+
+    function startEditTrip(id) {
+      editingTripId = id;
+      renderTrips();
+    }
+
+    function cancelEditTrip() {
+      editingTripId = null;
+      renderTrips();
+    }
+
+    function saveTripEdit(id, row) {
+      const trip = state.trips.find(item => item.id === id);
+      if (!trip) return;
+
+      const date = row.querySelector('[data-field="date"]').value;
+      const fromPostal = row.querySelector('[data-field="fromPostal"]').value.trim();
+      const fromCity = row.querySelector('[data-field="fromCity"]').value.trim();
+      const toPostal = row.querySelector('[data-field="toPostal"]').value.trim();
+      const toCity = row.querySelector('[data-field="toCity"]').value.trim();
+      const purpose = row.querySelector('[data-field="purpose"]').value.trim();
+      const type = row.querySelector('[data-field="type"]').value;
+      const grossKm = Number(row.querySelector('[data-field="grossKm"]').value || 0);
+      const deductionKm = Number(row.querySelector('[data-field="deductionKm"]').value || 0);
+
+      const missingFields = [];
+      if (!date) missingFields.push('datum');
+      missingFields.push(...missingTripAddressFields('start', fromPostal, fromCity));
+      missingFields.push(...missingTripAddressFields('stop', toPostal, toCity));
+      if (missingFields.length) {
+        showStatus(`Ontbreekt: ${missingFields.join(', ')}.`, 'err');
+        return;
+      }
+
+      trip.date = date;
+      trip.fromAddress = buildAddress(fromPostal, fromCity);
+      trip.toAddress = buildAddress(toPostal, toCity);
+      trip.purpose = purpose;
+      trip.type = type;
+      trip.grossKm = Math.round(grossKm * 10) / 10;
+      trip.deductionKm = Math.round(deductionKm * 10) / 10;
+      trip.netKm = Math.max(0, Math.round((trip.grossKm - trip.deductionKm) * 10) / 10);
+
+      editingTripId = null;
+      persist();
+      renderAll();
+      showStatus('Rit bijgewerkt.', 'ok');
+    }
+
+    function renderTrips() {
+      const totals = state.trips.reduce((acc, trip) => {
+        acc.gross += Number(trip.grossKm || 0);
+        acc.deduct += Number(trip.deductionKm || 0);
+        acc.net += Number(trip.netKm || 0);
+        return acc;
+      }, { gross: 0, deduct: 0, net: 0 });
+
+      els.metricTrips.textContent = String(state.trips.length);
+      els.metricGross.textContent = fmtNumber(totals.gross);
+      els.metricDeduct.textContent = fmtNumber(totals.deduct);
+      els.metricNet.textContent = fmtNumber(totals.net);
+
+      els.tripTableBody.innerHTML = '';
+      if (!state.trips.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="8" class="muted">Nog geen ritten toegevoegd.</td>';
+        els.tripTableBody.appendChild(tr);
+        return;
+      }
+
+      state.trips.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(trip => {
+        const tr = document.createElement('tr');
+        if (editingTripId === trip.id) {
+          const from = splitAddress(trip.fromAddress);
+          const to = splitAddress(trip.toAddress);
+          tr.innerHTML = `
+            <td><input class="table-input" data-field="date" type="date" value="${escapeHtml(trip.date)}" /></td>
+            <td>
+              <input class="table-input" data-field="fromPostal" placeholder="Postcode + huisnr" value="${escapeHtml(from.postal)}" />
+              <input class="table-input" data-field="fromCity" placeholder="Woonplaats" value="${escapeHtml(from.city)}" style="margin-top:6px;" />
+            </td>
+            <td>
+              <input class="table-input" data-field="toPostal" placeholder="Postcode + huisnr" value="${escapeHtml(to.postal)}" />
+              <input class="table-input" data-field="toCity" placeholder="Woonplaats" value="${escapeHtml(to.city)}" style="margin-top:6px;" />
+            </td>
+            <td>
+              <textarea class="table-textarea" data-field="purpose" placeholder="Doel">${escapeHtml(trip.purpose)}</textarea>
+              <select class="table-select" data-field="type" style="margin-top:6px;">
+                <option value="dienstreis"${trip.type === 'dienstreis' ? ' selected' : ''}>Dienstreis</option>
+                <option value="studiereis"${trip.type === 'studiereis' ? ' selected' : ''}>Studiereis</option>
+                <option value="gezondheidsreis"${trip.type === 'gezondheidsreis' ? ' selected' : ''}>Gezondheidsreis</option>
+              </select>
+            </td>
+            <td><input class="table-input" data-field="grossKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.grossKm ?? ''))}" /></td>
+            <td><input class="table-input" data-field="deductionKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.deductionKm ?? ''))}" /></td>
+            <td><strong>${fmtNumber(Math.max(0, Number(trip.grossKm || 0) - Number(trip.deductionKm || 0)))}</strong><div class="small muted">Netto wordt opnieuw berekend</div></td>
+            <td>
+              <div class="table-actions">
+                <button class="btn-primary small-btn" data-action="save">Opslaan</button>
+                <button class="btn-ghost small-btn" data-action="cancel">Annuleren</button>
+              </div>
+            </td>
+          `;
+          tr.querySelector('[data-action="save"]').addEventListener('click', () => saveTripEdit(trip.id, tr));
+          tr.querySelector('[data-action="cancel"]').addEventListener('click', cancelEditTrip);
+        } else {
+          tr.innerHTML = `
+            <td>${formatDate(trip.date)}</td>
+            <td>${escapeHtml(trip.fromAddress)}</td>
+            <td>${escapeHtml(trip.toAddress)}</td>
+            <td>${escapeHtml(trip.purpose)}<div class="small muted">${escapeHtml(trip.type)}</div></td>
+            <td>${fmtNumber(trip.grossKm)}</td>
+            <td>${fmtNumber(trip.deductionKm)}</td>
+            <td><strong>${fmtNumber(trip.netKm)}</strong></td>
+            <td>
+              <div class="table-actions">
+                <a class="table-link" href="${googleMapsRouteUrl(trip.fromAddress, trip.toAddress)}" target="_blank" rel="noopener noreferrer">Route</a>
+                <button class="btn-soft small-btn" data-action="edit">Bewerk</button>
+                <button class="btn-danger small-btn" data-action="delete">Verwijder</button>
+              </div>
+            </td>
+          `;
+          tr.querySelector('[data-action="edit"]').addEventListener('click', () => startEditTrip(trip.id));
+          tr.querySelector('[data-action="delete"]').addEventListener('click', () => removeTrip(trip.id));
+        }
+        els.tripTableBody.appendChild(tr);
+      });
+    }
+
+    function renderAll() {
+      hydrateForm();
+      renderTrips();
+      renderAddressBook();
+      renderQuickChoices();
+    }
+
+    function buildWorkbookData() {
+      const rows = [];
+      rows[1] = [];
+      rows[2] = ['Declaratieformulier meerdere reisbewegingen'];
+      rows[3] = [
+        "LET OP:  voor je dit formulier als bijlage toevoegt in het AFAS Medewerkerportaal, eerst opslaan op je computer!! \n\nBreng, indien nodig, het aantal woon-werk kilometers op de reisbeweging in mindering. \nJe vindt deze in het AFAS Medewerkerportaal bij 'Mijn Insite - Alles over mijzelf'.\n\nJe brengt woon-werk kilometers in mindering als je vanuit je thuisadres naar een andere locatie/adres\ndan je vaste werklocatie/standplaats rijdt en vice versa. Bij retour breng je dus 2x woon-werk kilometers in mindering.\n\nKomt hierdoor je totaal aantal kilometers op die dag onder ‘0’, dan hoef je niets te declareren.\n(zie ook de mobiliteit - uitvoeringsregeling op het Infoplein van intranet).\n\nNEEM, NA HET INVULLEN VAN DIT FORMULIER, HET TOTAAL AANTAL KILOMETERS ONDERAAN DEZE TABEL, OVER IN HET TWEEDE INVULVELD IN HET AFAS SCHERM"
+      ];
+      rows[5] = ['Datum', 'Vertrek', '', 'Bestemming', '', 'Doel ', 'Aantal km', '-/- afstand woonwerk verkeer **', 'TOTAAL'];
+      rows[6] = ['', 'Postcode + huisnr', 'Woonplaats', 'Postcode + huisnr', 'Woonplaats', '', '', '', ''];
+
+      const sortedTrips = state.trips.slice().sort((a, b) => a.date.localeCompare(b.date));
+      let rowIdx = 7;
+      for (const trip of sortedTrips) {
+        const from = splitAddress(trip.fromAddress);
+        const to = splitAddress(trip.toAddress);
+        rows[rowIdx] = [
+          new Date(trip.date + 'T00:00:00'),
+          from.postal,
+          from.city,
+          to.postal,
+          to.city,
+          trip.purpose,
+          trip.grossKm,
+          trip.deductionKm,
+          trip.netKm
+        ];
+        rowIdx += 1;
+      }
+      rows[rowIdx + 2] = ['', '', '', '', '', 'TOTAAL AANTAL KILOMETERS', '', '', { f: `SUM(I7:I${Math.max(7, rowIdx - 1)})` }];
+      rows[rowIdx + 4] = ['Tarieven verschillende soorten reisbewegingen:'];
+      rows[rowIdx + 6] = ['Dienstreizen:  ', '', `€ ${Number(state.settings.rate || 0.30).toFixed(2).replace('.', ',')} /km`];
+      rows[rowIdx + 7] = ['Studiereizen:  ', '', '€ 0,23 /km'];
+      rows[rowIdx + 8] = ['Gezondheidsreizen: ', '', '€ 0,23 /km'];
+      return rows;
+    }
+
+    function exportToExcel() {
+      if (!state.trips.length) {
+        showStatus('Voeg eerst minimaal één rit toe.', 'err');
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      const rows = buildWorkbookData();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 16 },
+        { wch: 38 }, { wch: 10 }, { wch: 18 }, { wch: 10 }
+      ];
+      for (let r = 7; r < 7 + state.trips.length; r++) {
+        const cell = ws[`A${r}`];
+        if (cell) cell.z = 'dd-mm-yyyy';
+        ['G', 'H', 'I'].forEach(col => {
+          if (ws[`${col}${r}`]) ws[`${col}${r}`].z = '0.0';
+        });
+      }
+      ws['!merges'] = [XLSX.utils.decode_range('A2:I2'), XLSX.utils.decode_range('A3:I3')];
+      XLSX.utils.book_append_sheet(wb, ws, 'Blad1');
+      const month = new Date().toISOString().slice(0,7);
+      XLSX.writeFile(wb, `declaratie_dienstreizen_${month}.xlsx`);
+      showStatus('Excelbestand geëxporteerd.', 'ok');
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'declaratie_backup.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('JSON backup gedownload.', 'ok');
+    }
+
+    function exportAddressesJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        addressBook: state.addressBook.slice().sort((a, b) => a.label.localeCompare(b.label, 'nl'))
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'declaratie_adressen.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus('Adresboek geëxporteerd.', 'ok');
+    }
+
+    function clearAddresses() {
+      if (!confirm('Weet je zeker dat je alle adressen wilt wissen? Thuis- en standplaats uit Instellingen blijven behouden.')) return;
+      state.addressBook = [];
+      addSystemAddresses(state);
+      if (editingAddressId) editingAddressId = null;
+      persist();
+      renderAll();
+      showStatus('Adresboek gewist. Thuis- en standplaats zijn behouden.', 'ok');
+    }
+
+    async function importJson(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        state = normalizeState(parsed);
+        persist();
+        renderAll();
+        clearStatus();
+        showStatus('Backup teruggezet.', 'ok');
+      } catch (error) {
+        showStatus('Deze backup kon niet worden ingelezen.', 'err');
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    function clearTrips() {
+      if (!confirm('Weet je zeker dat je alle ritten wilt wissen? Adressen en instellingen blijven behouden.')) return;
+      state.settings.homeAddress = currentHomeAddress();
+      state.settings.workAddress = currentWorkAddress();
+      state.settings.commuteDistance = Number(els.commuteDistance.value || 0);
+      state.settings.rate = Number(els.rate.value || 0.30);
+      state.settings.googleMapsApiKey = els.googleMapsApiKey.value.trim();
+      state.settings.deductionMode = normalizeDeductionMode(els.deductionMode.value);
+      state.trips = [];
+      if (editingTripId) editingTripId = null;
+      persist();
+      renderAll();
+      clearStatus();
+      showStatus('Alle ritten zijn gewist. Adressen en instellingen zijn behouden.', 'ok');
+    }
+  </script>
+</body>
+</html>
