@@ -74,6 +74,31 @@
       display:inline-flex; align-items:center; gap:6px; padding: 7px 11px; background:#eff8ff;
       color:#175cd3; border-radius:999px; font-size:12px; font-weight:700;
     }
+    .sync-badge {
+      display:none; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:600;
+      color:#27c281;
+    }
+    .sync-badge.show { display:inline-flex; }
+    .sync-dot { width:8px; height:8px; border-radius:50%; background:#27c281; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .addr-modal-backdrop {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:200;
+      align-items:center; justify-content:center;
+    }
+    .addr-modal-backdrop.show { display:flex; }
+    .addr-modal {
+      background:#fff; border-radius:20px; padding:24px; width:min(480px,92vw);
+      max-height:75vh; display:flex; flex-direction:column; gap:14px;
+      box-shadow:0 12px 48px rgba(0,0,0,0.22);
+    }
+    .addr-modal-header { display:flex; align-items:center; justify-content:space-between; }
+    .addr-modal-search { width:100%; padding:10px 14px; border-radius:12px; border:1.5px solid #cfd7e5; font-size:14px; }
+    .addr-modal-list { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:6px; min-height:80px; }
+    .addr-modal-item { padding:10px 14px; border-radius:12px; cursor:pointer; border:1px solid #e4e8f0; transition:background .12s; }
+    .addr-modal-item:hover { background:#eef4ff; border-color:#9fb4ef; }
+    .addr-modal-item .item-label { font-weight:700; font-size:14px; }
+    .addr-modal-item .item-meta { font-size:12px; color:#667085; margin-top:2px; }
+    .chip-more { background:#f0f4ff; color:#175cd3; border-color:#c4d3f5; font-size:12px; }
     .fields { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
     .fields.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
@@ -151,6 +176,15 @@
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fields, .fields.three { grid-template-columns:1fr; }
     }
+    .undo-bar {
+      display:none; margin-bottom:16px; padding:12px 16px; border-radius:14px; font-size:14px;
+      background:#fff8e1; color:#7a5c00; border:1px solid #ffe082; box-shadow:var(--shadow);
+      align-items:center; justify-content:space-between; gap:12px;
+    }
+    .undo-bar.show { display:flex; }
+    .period-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    .period-bar label { font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; }
+    .period-bar select { width:auto; padding:8px 12px; border-radius:10px; font-size:13px; }
   </style>
 </head>
 <body>
@@ -182,12 +216,17 @@
         </svg>
         <div class="hero-copy">
           <h1>Dienstreizen Declaratie App</h1>
-          <p>Voeg ritten toe, trek automatisch woon-werkverkeer af, beheer je adresboek en exporteer alles naar Excel of JSON-backup. Alles draait lokaal in je browser.</p>
+          <p>Voeg ritten toe, trek automatisch woon-werkverkeer af, beheer je adresboek en exporteer alles naar Excel of JSON-backup.</p>
+          <span id="syncBadge" class="sync-badge"><span class="sync-dot"></span>Gesynchroniseerd met Firebase</span>
         </div>
       </div>
     </section>
 
     <div id="statusBox" class="status"></div>
+    <div id="undoBar" class="undo-bar">
+      <span id="undoMsg"></span>
+      <button class="btn-soft small-btn" onclick="executeUndo()">Ongedaan maken</button>
+    </div>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="declareren">Declareren</button>
@@ -204,7 +243,7 @@
                 <h2>Nieuwe rit toevoegen</h2>
                 <p>De kern van de app: invoeren, berekenen en opslaan.</p>
               </div>
-              <span class="pill">Lokale app</span>
+
             </div>
 
             <div class="fields">
@@ -300,6 +339,10 @@
                 <p>Deze ritten worden geëxporteerd naar het declaratiebestand.</p>
               </div>
             </div>
+            <div class="period-bar">
+              <label for="periodFilter">Periode:</label>
+              <select id="periodFilter"><option value="all">Alle ritten</option></select>
+            </div>
             <div class="metrics">
               <div class="metric"><div class="label">Ritten</div><div class="value" id="metricTrips">0</div></div>
               <div class="metric"><div class="label">Bruto km</div><div class="value" id="metricGross">0,0</div></div>
@@ -308,6 +351,7 @@
             </div>
             <div class="actions" style="margin-bottom:14px;">
               <button class="btn-primary" id="exportBtn">Exporteer naar Excel</button>
+              <button class="btn-soft" id="exportMonthBtn">Exporteer huidige maand</button>
               <button class="btn-danger" id="clearBtn">Wis alle ritten</button>
               <input id="importJsonInput" type="file" accept="application/json" style="display:none;" />
             </div>
@@ -443,6 +487,47 @@
     <p class="footer-note">Gemaakt door Warenhuis Willemsen</p>
   </div>
 
+  <!-- Adres picker modal -->
+  <div id="addrPickerBackdrop" class="addr-modal-backdrop" onclick="handlePickerBackdropClick(event)">
+    <div class="addr-modal" role="dialog" aria-label="Kies een adres">
+      <div class="addr-modal-header">
+        <strong>Kies een adres</strong>
+        <button class="btn-ghost small-btn" onclick="closeAddrPicker()">✕</button>
+      </div>
+      <input id="addrPickerSearch" class="addr-modal-search" type="search" placeholder="Zoek op naam of adres..." oninput="renderAddrPickerList(this.value)" />
+      <div id="addrPickerList" class="addr-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- Bewaar adres modal -->
+  <div id="saveAddrBackdrop" class="addr-modal-backdrop" onclick="handleSaveAddrBackdropClick(event)">
+    <div class="addr-modal" role="dialog" aria-label="Opslaan in adresboek">
+      <div class="addr-modal-header">
+        <strong>Opslaan in adresboek</strong>
+        <button class="btn-ghost small-btn" onclick="closeSaveAddr()">✕</button>
+      </div>
+      <div id="saveAddrAddressDisplay" class="muted" style="font-size:13px;"></div>
+      <div class="field">
+        <label for="saveAddrLabel">Label</label>
+        <input id="saveAddrLabel" placeholder="Bijv. Kantoor Utrecht" />
+      </div>
+      <div class="field">
+        <label for="saveAddrCategory">Type</label>
+        <select id="saveAddrCategory">
+          <option value="algemeen">Algemeen</option>
+          <option value="werkplek_client">Werkplek Client</option>
+          <option value="thuisbezoek_client">Thuisbezoek Client</option>
+          <option value="werkplek">Werkplek</option>
+          <option value="thuis">Thuis</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="btn-primary small-btn" onclick="confirmSaveAddr()">Opslaan</button>
+        <button class="btn-ghost small-btn" onclick="closeSaveAddr()">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = 'declaratie_app_state_v6';
     const LEGACY_KEYS = ['declaratie_app_state_v5','declaratie_app_state_v4','declaratie_app_state_v3','declaratie_app_state_v2'];
@@ -501,6 +586,12 @@
     let draftTripKm = 0;
     let editingTripId = null;
     let editingAddressId = null;
+    let activeFilter = 'all';
+    let pendingUndo = null;
+    let pendingUndoTimer = null;
+    const UNDO_DELAY = 5000;
+    let pickerTarget = null;
+    let saveAddrSource = null;
 
     els.tripDate.value = today;
     initializeApp();
@@ -561,6 +652,7 @@
         }
         firestoreDb = firebase.firestore();
         firebaseSyncEnabled = true;
+        document.getElementById('syncBadge').classList.add('show');
         return true;
       } catch (error) {
         firebaseSyncEnabled = false;
@@ -604,7 +696,12 @@
       document.getElementById('calcDistanceBtn').addEventListener('click', calculateDistanceOnly);
       document.getElementById('addTripBtn').addEventListener('click', addTrip);
       document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+      document.getElementById('exportMonthBtn').addEventListener('click', exportCurrentMonth);
       document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+      document.getElementById('periodFilter').addEventListener('change', e => {
+        activeFilter = e.target.value;
+        renderTrips();
+      });
       document.getElementById('exportAddressesBtn').addEventListener('click', exportAddressesJson);
       document.getElementById('clearAddressesBtn').addEventListener('click', clearAddresses);
       document.getElementById('importJsonBtn').addEventListener('click', () => els.importJsonInput.click());
@@ -620,6 +717,19 @@
       els.deductionMode.addEventListener('change', () => {
         state.settings.deductionMode = normalizeDeductionMode(els.deductionMode.value);
         persist();
+      });
+
+      let commuteDebounceTimer = null;
+      [els.workPostal, els.workCity].forEach(input => {
+        input.addEventListener('input', () => {
+          clearTimeout(commuteDebounceTimer);
+          commuteDebounceTimer = setTimeout(() => {
+            const apiKey = (els.googleMapsApiKey.value || state.settings.googleMapsApiKey || '').trim();
+            const homeOk = els.homePostal.value.trim() && els.homeCity.value.trim();
+            const workOk = els.workPostal.value.trim() && els.workCity.value.trim();
+            if (apiKey && homeOk && workOk) calculateCommuteDistance();
+          }, 800);
+        });
       });
     }
 
@@ -747,6 +857,31 @@
     function clearStatus() {
       els.statusBox.className = 'status';
       els.statusBox.textContent = '';
+    }
+
+    function showUndoBar(message) {
+      if (pendingUndoTimer) clearTimeout(pendingUndoTimer);
+      document.getElementById('undoMsg').textContent = message;
+      document.getElementById('undoBar').classList.add('show');
+      pendingUndoTimer = setTimeout(clearUndoBar, UNDO_DELAY);
+    }
+
+    function clearUndoBar() {
+      pendingUndo = null;
+      pendingUndoTimer = null;
+      document.getElementById('undoBar').classList.remove('show');
+    }
+
+    function executeUndo() {
+      if (!pendingUndo) return;
+      clearTimeout(pendingUndoTimer);
+      pendingUndoTimer = null;
+      pendingUndo();
+      pendingUndo = null;
+      document.getElementById('undoBar').classList.remove('show');
+      persist();
+      renderAll();
+      showStatus('Verwijdering ongedaan gemaakt.', 'ok');
     }
 
     function normalizeAddress(value) {
@@ -1103,10 +1238,13 @@
         showStatus('Verwijder eerst of wijzig het gekoppelde thuis- of werkadres in Instellingen.', 'err');
         return;
       }
+      const idx = state.addressBook.indexOf(item);
       state.addressBook = state.addressBook.filter(entry => entry.id !== id);
       persist();
       renderAddressBook();
       renderQuickChoices();
+      pendingUndo = () => { state.addressBook.splice(idx, 0, item); };
+      showUndoBar(`Adres "${item.label}" verwijderd.`);
       showStatus('Adres verwijderd.', 'ok');
     }
 
@@ -1201,6 +1339,7 @@
     function renderQuickChoices() {
       const quick = getQuickAddresses();
       [els.fromQuickChoices, els.toQuickChoices].forEach(container => {
+        const target = container === els.fromQuickChoices ? 'from' : 'to';
         container.innerHTML = '';
         quick.forEach(item => {
           const chip = document.createElement('button');
@@ -1208,13 +1347,99 @@
           chip.type = 'button';
           chip.innerHTML = `<span>${escapeHtml(item.label)}</span>`;
           chip.title = item.address;
-          chip.addEventListener('click', () => {
-            if (container === els.fromQuickChoices) setTripAddress('from', item.address);
-            if (container === els.toQuickChoices) setTripAddress('to', item.address);
-          });
+          chip.addEventListener('click', () => setTripAddress(target, item.address));
           container.appendChild(chip);
         });
+        if (state.addressBook.filter(i => i.address && i.label).length > quick.length) {
+          const more = document.createElement('button');
+          more.className = 'chip chip-more';
+          more.type = 'button';
+          more.textContent = 'Meer adressen →';
+          more.addEventListener('click', () => openAddrPicker(target));
+          container.appendChild(more);
+        }
+        const save = document.createElement('button');
+        save.className = 'chip chip-more';
+        save.type = 'button';
+        save.textContent = '+ Bewaar in adresboek';
+        save.addEventListener('click', () => openSaveAddrForm(target));
+        container.appendChild(save);
       });
+    }
+
+    function openAddrPicker(target) {
+      pickerTarget = target;
+      document.getElementById('addrPickerSearch').value = '';
+      renderAddrPickerList('');
+      document.getElementById('addrPickerBackdrop').classList.add('show');
+      document.getElementById('addrPickerSearch').focus();
+    }
+
+    function closeAddrPicker() {
+      document.getElementById('addrPickerBackdrop').classList.remove('show');
+      pickerTarget = null;
+    }
+
+    function handlePickerBackdropClick(e) {
+      if (e.target === document.getElementById('addrPickerBackdrop')) closeAddrPicker();
+    }
+
+    function renderAddrPickerList(query) {
+      const q = (query || '').toLowerCase();
+      const list = document.getElementById('addrPickerList');
+      const items = state.addressBook
+        .filter(i => i.address && i.label)
+        .filter(i => !q || i.label.toLowerCase().includes(q) || i.address.toLowerCase().includes(q))
+        .sort((a, b) => a.label.localeCompare(b.label, 'nl'));
+      list.innerHTML = '';
+      if (!items.length) {
+        list.innerHTML = '<div class="muted" style="padding:12px 0">Geen adressen gevonden.</div>';
+        return;
+      }
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'addr-modal-item';
+        div.innerHTML = `<div class="item-label">${escapeHtml(item.label)}</div><div class="item-meta">${escapeHtml(item.address)}</div>`;
+        div.addEventListener('click', () => {
+          setTripAddress(pickerTarget, item.address);
+          closeAddrPicker();
+        });
+        list.appendChild(div);
+      });
+    }
+
+    function openSaveAddrForm(source) {
+      const postal = source === 'from' ? els.fromPostal.value.trim() : els.toPostal.value.trim();
+      const city   = source === 'from' ? els.fromCity.value.trim()   : els.toCity.value.trim();
+      const address = buildAddress(postal, city);
+      if (!address) { showStatus('Vul eerst een adres in.', 'err'); return; }
+      saveAddrSource = source;
+      document.getElementById('saveAddrAddressDisplay').textContent = address;
+      document.getElementById('saveAddrLabel').value = address;
+      document.getElementById('saveAddrCategory').value = 'algemeen';
+      document.getElementById('saveAddrBackdrop').classList.add('show');
+      setTimeout(() => { document.getElementById('saveAddrLabel').select(); }, 50);
+    }
+
+    function closeSaveAddr() {
+      document.getElementById('saveAddrBackdrop').classList.remove('show');
+      saveAddrSource = null;
+    }
+
+    function handleSaveAddrBackdropClick(e) {
+      if (e.target === document.getElementById('saveAddrBackdrop')) closeSaveAddr();
+    }
+
+    function confirmSaveAddr() {
+      const label    = document.getElementById('saveAddrLabel').value.trim();
+      const category = document.getElementById('saveAddrCategory').value;
+      const address  = document.getElementById('saveAddrAddressDisplay').textContent.trim();
+      if (!label) { showStatus('Vul een label in.', 'err'); return; }
+      upsertAddress(state.addressBook, { label, address, category, favorite: false });
+      renderAddressBook();
+      renderQuickChoices();
+      closeSaveAddr();
+      showStatus(`"${label}" opgeslagen in adresboek.`, 'ok');
     }
 
     function renderAddressBook() {
@@ -1296,10 +1521,15 @@
     }
 
     function removeTrip(id) {
-      state.trips = state.trips.filter(trip => trip.id !== id);
+      const trip = state.trips.find(t => t.id === id);
+      if (!trip) return;
+      const idx = state.trips.indexOf(trip);
       if (editingTripId === id) editingTripId = null;
+      state.trips = state.trips.filter(t => t.id !== id);
       persist();
       renderTrips();
+      pendingUndo = () => { state.trips.splice(idx, 0, trip); };
+      showUndoBar(`Rit van ${formatDate(trip.date)} verwijderd.`);
       showStatus('Rit verwijderd.', 'ok');
     }
 
@@ -1351,28 +1581,55 @@
       showStatus('Rit bijgewerkt.', 'ok');
     }
 
+    function filteredTrips() {
+      if (activeFilter === 'all') return state.trips;
+      return state.trips.filter(trip => trip.date && trip.date.startsWith(activeFilter));
+    }
+
+    function renderPeriodFilter() {
+      const select = document.getElementById('periodFilter');
+      const months = [...new Set(
+        state.trips.map(t => t.date ? t.date.slice(0, 7) : null).filter(Boolean)
+      )].sort().reverse();
+      select.innerHTML = '<option value="all">Alle ritten</option>';
+      months.forEach(m => {
+        const [year, month] = m.split('-');
+        const label = new Date(Number(year), Number(month) - 1, 1)
+          .toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = label;
+        select.appendChild(opt);
+      });
+      if (!months.includes(activeFilter) && activeFilter !== 'all') activeFilter = 'all';
+      select.value = activeFilter;
+    }
+
     function renderTrips() {
-      const totals = state.trips.reduce((acc, trip) => {
+      renderPeriodFilter();
+      const trips = filteredTrips();
+      const totals = trips.reduce((acc, trip) => {
         acc.gross += Number(trip.grossKm || 0);
         acc.deduct += Number(trip.deductionKm || 0);
         acc.net += Number(trip.netKm || 0);
         return acc;
       }, { gross: 0, deduct: 0, net: 0 });
 
-      els.metricTrips.textContent = String(state.trips.length);
+      els.metricTrips.textContent = String(trips.length);
       els.metricGross.textContent = fmtNumber(totals.gross);
       els.metricDeduct.textContent = fmtNumber(totals.deduct);
       els.metricNet.textContent = fmtNumber(totals.net);
 
       els.tripTableBody.innerHTML = '';
-      if (!state.trips.length) {
+      if (!trips.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="8" class="muted">Nog geen ritten toegevoegd.</td>';
+        const msg = activeFilter === 'all' ? 'Nog geen ritten toegevoegd.' : 'Geen ritten in deze periode.';
+        tr.innerHTML = `<td colspan="8" class="muted">${msg}</td>`;
         els.tripTableBody.appendChild(tr);
         return;
       }
 
-      state.trips.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(trip => {
+      trips.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(trip => {
         const tr = document.createElement('tr');
         if (editingTripId === trip.id) {
           const from = splitAddress(trip.fromAddress);
@@ -1438,7 +1695,7 @@
       renderQuickChoices();
     }
 
-    function buildWorkbookData() {
+    function buildWorkbookData(tripsOverride) {
       const rows = [];
       rows[1] = [];
       rows[2] = ['Declaratieformulier meerdere reisbewegingen'];
@@ -1448,7 +1705,7 @@
       rows[5] = ['Datum', 'Vertrek', '', 'Bestemming', '', 'Doel ', 'Aantal km', '-/- afstand woonwerk verkeer **', 'TOTAAL'];
       rows[6] = ['', 'Postcode + huisnr', 'Woonplaats', 'Postcode + huisnr', 'Woonplaats', '', '', '', ''];
 
-      const sortedTrips = state.trips.slice().sort((a, b) => a.date.localeCompare(b.date));
+      const sortedTrips = (tripsOverride || state.trips).slice().sort((a, b) => a.date.localeCompare(b.date));
       let rowIdx = 7;
       for (const trip of sortedTrips) {
         const from = splitAddress(trip.fromAddress);
@@ -1474,19 +1731,20 @@
       return rows;
     }
 
-    function exportToExcel() {
-      if (!state.trips.length) {
+    function exportToExcel(tripsOverride, filenameSuffix) {
+      const exportTrips = tripsOverride || state.trips;
+      if (!exportTrips.length) {
         showStatus('Voeg eerst minimaal één rit toe.', 'err');
         return;
       }
       const wb = XLSX.utils.book_new();
-      const rows = buildWorkbookData();
+      const rows = buildWorkbookData(exportTrips);
       const ws = XLSX.utils.aoa_to_sheet(rows);
       ws['!cols'] = [
         { wch: 12 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 16 },
         { wch: 38 }, { wch: 10 }, { wch: 18 }, { wch: 10 }
       ];
-      for (let r = 7; r < 7 + state.trips.length; r++) {
+      for (let r = 7; r < 7 + exportTrips.length; r++) {
         const cell = ws[`A${r}`];
         if (cell) cell.z = 'dd-mm-yyyy';
         ['G', 'H', 'I'].forEach(col => {
@@ -1495,9 +1753,19 @@
       }
       ws['!merges'] = [XLSX.utils.decode_range('A2:I2'), XLSX.utils.decode_range('A3:I3')];
       XLSX.utils.book_append_sheet(wb, ws, 'Blad1');
-      const month = new Date().toISOString().slice(0,7);
-      XLSX.writeFile(wb, `declaratie_dienstreizen_${month}.xlsx`);
+      const suffix = filenameSuffix || new Date().toISOString().slice(0,7);
+      XLSX.writeFile(wb, `declaratie_dienstreizen_${suffix}.xlsx`);
       showStatus('Excelbestand geëxporteerd.', 'ok');
+    }
+
+    function exportCurrentMonth() {
+      const month = today.slice(0, 7);
+      const monthTrips = state.trips.filter(t => t.date && t.date.startsWith(month));
+      if (!monthTrips.length) {
+        showStatus('Geen ritten gevonden voor de huidige maand.', 'err');
+        return;
+      }
+      exportToExcel(monthTrips, month);
     }
 
     function exportJson() {
