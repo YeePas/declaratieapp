@@ -28,28 +28,29 @@
       background: var(--bg);
       color: var(--text);
     }
-    .wrap { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 20px 24px 24px; }
     h1, h2, h3 { margin: 0 0 12px; }
     p { margin: 0 0 12px; color: var(--muted); }
     .hero {
       background: linear-gradient(135deg, #1f4dd8, #5b7cff);
       color: white;
-      border-radius: 28px;
-      padding: 28px;
+      border-radius: 22px;
+      padding: 16px 20px;
       box-shadow: var(--shadow);
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
-    .hero-head { display:flex; align-items:center; gap:18px; }
+    .hero-head { display:flex; align-items:center; gap:14px; }
     .hero-logo {
-      width:92px; height:92px; flex:0 0 auto; border-radius:24px;
+      width:62px; height:62px; flex:0 0 auto; border-radius:18px;
       background: rgba(255,255,255,0.16);
       border: 1px solid rgba(255,255,255,0.22);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
-      padding: 10px;
+      padding: 7px;
     }
     .hero-copy { min-width:0; }
+    .hero h1 { margin-bottom:0; font-size:28px; line-height:1.15; }
     .hero p { color: rgba(255,255,255,0.92); max-width: 920px; }
-    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 18px; }
+    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 14px; }
     .tab-btn {
       border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 800; cursor: pointer;
       background: white; color: #344054; box-shadow: var(--shadow);
@@ -69,7 +70,13 @@
       background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
       padding: 20px; border: 1px solid rgba(16,24,40,0.04);
     }
+    .overview-card {
+      background:#f9fbff;
+      border-color:#cfdaf0;
+    }
     .section-title { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
+    .section-title h2 { margin-bottom:6px; }
+    .section-title p { margin-bottom:0; }
     .pill {
       display:inline-flex; align-items:center; gap:6px; padding: 7px 11px; background:#eff8ff;
       color:#175cd3; border-radius:999px; font-size:12px; font-weight:700;
@@ -103,6 +110,7 @@
     .fields.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
     .field.full { grid-column: 1 / -1; }
+    .field.align-label label { min-height:34px; display:flex; align-items:flex-end; }
     label { font-size:13px; font-weight:700; color:var(--muted); }
     .label-with-icon { display:inline-flex; align-items:center; gap:8px; }
     .label-icon {
@@ -118,6 +126,9 @@
     textarea { min-height: 94px; resize: vertical; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
     button { border:0; border-radius:14px; padding: 11px 15px; font-weight: 800; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .btn-icon { width:15px; height:15px; flex:0 0 auto; }
+    .icon-btn-label { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
     .btn-primary { background: var(--accent); color:white; }
     .btn-soft { background: var(--accent-soft); color: var(--accent); }
     .btn-ghost { background:#eef2f6; color:#344054; }
@@ -129,10 +140,29 @@
     }
     .route-link:hover { text-decoration:underline; }
     .route-link[hidden] { display:none; }
-    .quick-row { margin-top: 8px; display:flex; flex-wrap:wrap; gap:8px; }
+    .quick-row { margin-top: 8px; display:flex; flex-wrap:wrap; gap:7px; }
+    .route-panels { display:grid; grid-template-columns: 1fr; gap:12px; }
+    .route-panel {
+      border:1px solid #dfe5ee; border-radius:16px; padding:14px; background:#fbfcff;
+    }
+    .route-panel.from { background:#fbfdff; border-color:#d8e1f2; }
+    .route-panel.to { background:#fffdf9; border-color:#eadcc7; }
+    .route-panel-head {
+      display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; font-weight:800;
+      letter-spacing:0.04em; text-transform:uppercase;
+    }
+    .route-panel.from .route-panel-head { color:#2356d8; }
+    .route-panel.to .route-panel-head { color:#b54708; }
+    .route-panel-arrow {
+      width:24px; height:24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:900;
+    }
+    .route-head-icon { width:14px; height:14px; display:block; }
+    .route-panel.from .route-panel-arrow { background:#e4ecff; color:#2356d8; }
+    .route-panel.to .route-panel-arrow { background:#ffedd5; color:#b54708; }
     .chip {
-      display:inline-flex; align-items:center; gap:6px; padding:10px 12px; border:1px solid #cfd7e5; border-radius:999px;
-      background:#f8faff; color:#3b4a60; font-weight:700; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid #cfd7e5; border-radius:999px;
+      background:#f8faff; color:#3b4a60; font-size:13px; font-weight:700; cursor:pointer;
     }
     .chip small { color:#667085; font-weight:700; }
     .chip:hover { border-color:#9fb4ef; background:#eef4ff; }
@@ -146,8 +176,9 @@
     .table-wrap { max-height: 540px; overflow:auto; }
     .small-btn { padding:8px 10px; border-radius:10px; font-size:12px; }
     .table-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .table-link { color:var(--accent); font-size:12px; font-weight:700; text-decoration:none; }
+    .table-link { display:inline-flex; align-items:center; gap:5px; color:var(--accent); font-size:12px; font-weight:700; text-decoration:none; }
     .table-link:hover { text-decoration:underline; }
+    .route-map-icon { width:14px; height:14px; flex:0 0 auto; }
     .table-input, .table-select, .table-textarea {
       width:100%; min-width:0; padding:8px 10px; border-radius:10px; font-size:12px;
     }
@@ -166,13 +197,17 @@
     .small { font-size:12px; }
     .empty { padding: 18px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); background:#fcfdff; }
     .spacer-top { margin-top:20px; }
-    .footer-note {
-      text-align:center; color:var(--muted); font-size:13px; margin: 22px 0 8px;
+    .footer-brand {
+      display:flex; flex-direction:column; align-items:center; gap:8px; margin: 24px 0 8px;
+      color:var(--muted); font-size:12px;
     }
+    .footer-logo { width:180px; max-width:58vw; height:auto; filter: drop-shadow(0 8px 16px rgba(16,24,40,0.12)); }
     @media (max-width: 980px) {
       .hero-head { align-items:flex-start; flex-direction:column; }
-      .hero-logo { width:78px; height:78px; }
+      .hero-logo { width:58px; height:58px; }
+      .hero h1 { font-size:24px; }
       .grid, .address-grid { grid-template-columns:1fr; }
+      .route-panels { grid-template-columns:1fr; }
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fields, .fields.three { grid-template-columns:1fr; }
     }
@@ -182,9 +217,74 @@
       align-items:center; justify-content:space-between; gap:12px;
     }
     .undo-bar.show { display:flex; }
-    .period-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
-    .period-bar label { font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; }
-    .period-bar select { width:auto; padding:8px 12px; border-radius:10px; font-size:13px; }
+    .conflict-banner {
+      display:none; margin-bottom:16px; padding:12px 16px; border-radius:14px; font-size:14px;
+      background:#fef3f2; color:#b42318; border:1px solid #fecdca; box-shadow:var(--shadow);
+      align-items:center; justify-content:space-between; gap:12px;
+    }
+    .conflict-banner.show { display:flex; }
+    .overview-toolbar {
+      display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:12px; align-items:start; margin-bottom:14px;
+    }
+    .month-tabs {
+      display:flex; gap:8px; flex-wrap:nowrap; min-width:0; overflow-x:auto; padding-bottom:4px;
+      scrollbar-width:thin;
+    }
+    .month-tabs::-webkit-scrollbar { height:6px; }
+    .month-tabs::-webkit-scrollbar-thumb { background:#cfd7e5; border-radius:999px; }
+    .month-tab {
+      border:1px solid var(--line); background:#fff; color:#344054; border-radius:999px;
+      padding:8px 12px; font-size:13px; font-weight:800; white-space:nowrap; flex:0 0 auto;
+    }
+    .month-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .export-month-control { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .export-month-control label { white-space:nowrap; }
+    .export-month-control select { width:auto; min-width:150px; padding:8px 12px; border-radius:10px; font-size:13px; }
+    .overview-actions {
+      display:flex; justify-content:space-between; align-items:center; gap:12px; margin: 0 0 14px;
+    }
+    .overview-actions .actions { margin-top:0; }
+    @media (max-width: 720px) {
+      .wrap { padding:12px; }
+      .hero { padding:14px; border-radius:18px; }
+      .tabs { gap:8px; }
+      .tab-btn { padding:10px 13px; font-size:13px; }
+      .card { padding:14px; border-radius:14px; }
+      .section-title { align-items:flex-start; }
+      .route-panel { padding:12px; border-radius:14px; }
+      .chip { max-width:100%; }
+      .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .metrics { gap:8px; }
+      .metric { padding:12px; border-radius:12px; }
+      .metric .label { font-size:10px; }
+      .metric .value { font-size:20px; }
+      .overview-toolbar { grid-template-columns:1fr; }
+      .overview-actions { align-items:flex-start; flex-direction:column; }
+      .overview-actions .actions, .overview-actions button { width:100%; }
+      .export-month-control { align-items:stretch; flex-direction:column; }
+      .export-month-control select, .export-month-control button { width:100%; }
+      .table-wrap { max-height:none; overflow:visible; }
+      table, thead, tbody, tr, td { display:block; width:100%; }
+      thead { display:none; }
+      tbody { display:flex; flex-direction:column; gap:10px; }
+      tr {
+        border:1px solid var(--line); border-radius:14px; padding:12px;
+        background:#fff; box-shadow:0 8px 18px rgba(16,24,40,0.06);
+      }
+      td {
+        display:grid; grid-template-columns:96px minmax(0, 1fr); gap:10px;
+        padding:7px 0; border-bottom:0; align-items:start;
+      }
+      td::before {
+        content:attr(data-label); color:var(--muted); font-size:11px; font-weight:800;
+        text-transform:uppercase; letter-spacing:0.03em;
+      }
+      td[data-label=""] { display:block; padding-top:10px; }
+      td[data-label=""]::before { display:none; }
+      .table-actions { gap:6px; }
+      .table-actions > * { flex:1 1 auto; justify-content:center; }
+      .table-input, .table-select, .table-textarea { font-size:14px; }
+    }
   </style>
 </head>
 <body>
@@ -216,13 +316,16 @@
         </svg>
         <div class="hero-copy">
           <h1>Dienstreizen Declaratie App</h1>
-          <p>Voeg ritten toe, trek automatisch woon-werkverkeer af, beheer je adresboek en exporteer alles naar Excel of JSON-backup.</p>
           <span id="syncBadge" class="sync-badge"><span class="sync-dot"></span>Gesynchroniseerd met Firebase</span>
         </div>
       </div>
     </section>
 
     <div id="statusBox" class="status"></div>
+    <div id="conflictBanner" class="conflict-banner">
+      <span id="conflictMsg">Iemand anders heeft de data bijgewerkt terwijl jij bezig was. Jouw wijzigingen zijn opgeslagen bovenop de remote versie.</span>
+      <button class="btn-danger small-btn" onclick="location.reload()">Herlaad</button>
+    </div>
     <div id="undoBar" class="undo-bar">
       <span id="undoMsg"></span>
       <button class="btn-soft small-btn" onclick="executeUndo()">Ongedaan maken</button>
@@ -241,7 +344,7 @@
             <div class="section-title">
               <div>
                 <h2>Nieuwe rit toevoegen</h2>
-                <p>De kern van de app: invoeren, berekenen en opslaan.</p>
+                <p>Voer datum, route en doel in.</p>
               </div>
 
             </div>
@@ -261,43 +364,69 @@
               </div>
             </div>
 
+            <div class="route-panels spacer-top">
+              <div class="route-panel from">
+                <div class="route-panel-head">
+                  <span class="route-panel-arrow" aria-hidden="true">
+                    <svg class="route-head-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C8.4 2 5.5 4.9 5.5 8.5c0 4.9 6.5 12.8 6.5 12.8s6.5-7.9 6.5-12.8C18.5 4.9 15.6 2 12 2Zm0 9.1a2.6 2.6 0 1 1 0-5.2a2.6 2.6 0 0 1 0 5.2Z"></path>
+                    </svg>
+                  </span>
+                  <span>Van</span>
+                </div>
+                <div class="fields">
+                  <div class="field align-label">
+                    <label for="fromPostal" class="label-with-icon">
+                      <span class="label-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="5"></circle>
+                        </svg>
+                      </span>
+                      <span>Vertrek postcode + huisnummer</span>
+                    </label>
+                    <input id="fromPostal" placeholder="Bijv. 5431 SN 5" />
+                  </div>
+                  <div class="field align-label">
+                    <label for="fromCity">Vertrek woonplaats</label>
+                    <input id="fromCity" placeholder="Bijv. Cuijk" />
+                  </div>
+                  <div class="field full">
+                    <div id="fromQuickChoices" class="quick-row"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="route-panel to">
+                <div class="route-panel-head">
+                  <span class="route-panel-arrow" aria-hidden="true">
+                    <svg class="route-head-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M5 3v18h2v-6h10.5l-1.8-4l1.8-4H7V3H5Zm2 6h7.4l-.9 2l.9 2H7V9Z"></path>
+                    </svg>
+                  </span>
+                  <span>Naar</span>
+                </div>
+                <div class="fields">
+                  <div class="field align-label">
+                    <label for="toPostal" class="label-with-icon">
+                      <span class="label-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"></path>
+                        </svg>
+                      </span>
+                      <span>Bestemming postcode + huisnummer</span>
+                    </label>
+                    <input id="toPostal" placeholder="Bijv. 6533 HV 50" />
+                  </div>
+                  <div class="field align-label">
+                    <label for="toCity">Bestemming woonplaats</label>
+                    <input id="toCity" placeholder="Bijv. Nijmegen" />
+                  </div>
+                  <div class="field full">
+                    <div id="toQuickChoices" class="quick-row"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="fields spacer-top">
-              <div class="field">
-                <label for="fromPostal" class="label-with-icon">
-                  <span class="label-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="5"></circle>
-                    </svg>
-                  </span>
-                  <span>Start postcode + huisnummer</span>
-                </label>
-                <input id="fromPostal" placeholder="Bijv. 5431 SN 5" />
-              </div>
-              <div class="field">
-                <label for="fromCity">Start woonplaats</label>
-                <input id="fromCity" placeholder="Bijv. Cuijk" />
-              </div>
-              <div class="field full">
-                <div id="fromQuickChoices" class="quick-row"></div>
-              </div>
-              <div class="field">
-                <label for="toPostal" class="label-with-icon">
-                  <span class="label-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"></path>
-                    </svg>
-                  </span>
-                  <span>Stop postcode + huisnummer</span>
-                </label>
-                <input id="toPostal" placeholder="Bijv. 6533 HV 50" />
-              </div>
-              <div class="field">
-                <label for="toCity">Stop woonplaats</label>
-                <input id="toCity" placeholder="Bijv. Nijmegen" />
-              </div>
-              <div class="field full">
-                <div id="toQuickChoices" class="quick-row"></div>
-              </div>
               <div class="field full">
                 <label for="purpose" class="label-with-icon">
                   <span class="label-icon" aria-hidden="true">
@@ -332,16 +461,30 @@
         </div>
 
         <div>
-          <section class="card">
+          <section class="card overview-card">
             <div class="section-title">
               <div>
                 <h2>Overzicht</h2>
-                <p>Deze ritten worden geëxporteerd naar het declaratiebestand.</p>
+                <p>Bekijk ritten per maand en exporteer je declaratie.</p>
               </div>
             </div>
-            <div class="period-bar">
-              <label for="periodFilter">Periode:</label>
-              <select id="periodFilter"><option value="all">Alle ritten</option></select>
+            <div class="overview-toolbar">
+              <div id="monthTabs" class="month-tabs" aria-label="Ritten per maand"></div>
+              <div class="export-month-control">
+                <label for="exportMonthSelect">Export maand:</label>
+                <select id="exportMonthSelect"></select>
+                <button class="btn-soft small-btn icon-btn-label" id="exportMonthBtn">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="m8 13l3 4"></path>
+                    <path d="m11 13l-3 4"></path>
+                    <path d="M14 13h2"></path>
+                    <path d="M14 17h2"></path>
+                  </svg>
+                  <span>Exporteer maand</span>
+                </button>
+              </div>
             </div>
             <div class="metrics">
               <div class="metric"><div class="label">Ritten</div><div class="value" id="metricTrips">0</div></div>
@@ -349,10 +492,13 @@
               <div class="metric"><div class="label">Aftrek woon-werk</div><div class="value" id="metricDeduct">0,0</div></div>
               <div class="metric"><div class="label">Netto km</div><div class="value" id="metricNet">0,0</div></div>
             </div>
-            <div class="actions" style="margin-bottom:14px;">
-              <button class="btn-primary" id="exportBtn">Exporteer naar Excel</button>
-              <button class="btn-soft" id="exportMonthBtn">Exporteer huidige maand</button>
-              <button class="btn-danger" id="clearBtn">Wis alle ritten</button>
+            <div class="overview-actions">
+              <div class="actions">
+                <button class="btn-primary" id="exportBtn">Exporteer naar Excel</button>
+              </div>
+              <div class="actions">
+                <button class="btn-danger" id="clearBtn">Wis alle ritten</button>
+              </div>
               <input id="importJsonInput" type="file" accept="application/json" style="display:none;" />
             </div>
             <div class="table-wrap">
@@ -391,11 +537,11 @@
               <label for="addressLabel">Label</label>
               <input id="addressLabel" placeholder="Bijv. Kantoor of Cliënt 1" />
             </div>
-            <div class="field">
+            <div class="field align-label">
               <label for="addressPostal">Postcode + huisnummer</label>
               <input id="addressPostal" placeholder="Bijv. 5431 SN 5" />
             </div>
-            <div class="field">
+            <div class="field align-label">
               <label for="addressCity">Woonplaats</label>
               <input id="addressCity" placeholder="Bijv. Cuijk" />
             </div>
@@ -408,6 +554,10 @@
                 <option value="werkplek">Werkplek</option>
                 <option value="thuisbezoek_client">Thuisbezoek Client</option>
               </select>
+            </div>
+            <div class="field full">
+              <label for="addressDefaultPurpose">Standaard doel (optioneel)</label>
+              <input id="addressDefaultPurpose" placeholder="Bijv. Werkbezoek of WO Naam Activiteit" />
             </div>
           </div>
           <div class="toggle-row spacer-top">
@@ -486,7 +636,10 @@
         <p class="hint">Firebase-sync: vul de FIREBASE_CONFIG waarden in dit HTML-bestand in om opslag in Firestore te activeren.</p>
       </section>
     </section>
-    <p class="footer-note">Gemaakt door Warenhuis Willemsen</p>
+    <footer class="footer-brand" aria-label="Warenhuis Willemsen">
+      <img class="footer-logo" src="logo-256.png" alt="Warenhuis Willemsen Nijmegen" />
+      <span>Gemaakt door Warenhuis Willemsen</span>
+    </footer>
   </div>
 
   <!-- Adres picker modal -->
@@ -560,10 +713,13 @@
       metricDeduct: document.getElementById('metricDeduct'),
       metricNet: document.getElementById('metricNet'),
       tripTableBody: document.getElementById('tripTableBody'),
+      monthTabs: document.getElementById('monthTabs'),
+      exportMonthSelect: document.getElementById('exportMonthSelect'),
       addressLabel: document.getElementById('addressLabel'),
       addressPostal: document.getElementById('addressPostal'),
       addressCity: document.getElementById('addressCity'),
       addressCategory: document.getElementById('addressCategory'),
+      addressDefaultPurpose: document.getElementById('addressDefaultPurpose'),
       addressFavorite: document.getElementById('addressFavorite'),
       addressList: document.getElementById('addressList'),
       importJsonInput: document.getElementById('importJsonInput')
@@ -583,6 +739,7 @@
     let firebaseSyncEnabled = false;
     let remoteSaveTimer = null;
     let remoteSaveInProgress = false;
+    let lastLoadedUpdatedAt = null;
 
     let state = loadState();
     let draftTripKm = 0;
@@ -594,6 +751,7 @@
     const UNDO_DELAY = 5000;
     let pickerTarget = null;
     let saveAddrSource = null;
+    let lastAutoPurpose = '';
 
     els.tripDate.value = today;
 
@@ -608,7 +766,8 @@
           googleMapsApiKey: ''
         },
         trips: [],
-        addressBook: []
+        addressBook: [],
+        routeCache: {}
       };
     }
 
@@ -696,16 +855,16 @@
       { label: 'Standplaats Cuijk', address: '5431 SN 5, Cuijk', category: 'werkplek' },
       { label: 'Nijmegen - Winselingseweg', address: '6541 AK 4L, Nijmegen', category: 'werkplek' },
       { label: 'Nijmegen - Standplaats', address: '6533 HV 50, Nijmegen', category: 'werkplek' },
-      { label: 'Gennep', address: '6591 MD 12, Gennep', category: 'werkplek_client' },
+      { label: 'Gennep', address: '6591 MD 12, Gennep', category: 'werkplek_client', defaultPurpose: 'WO R.S. Begeleid Werken' },
       { label: 'Molenhoek', address: '6584 BE 3, Molenhoek', category: 'werkplek_client' },
       { label: 'Wijchen - Radboud boerderij', address: '6604 AP 1017, Wijchen', category: 'werkplek_client' },
       { label: 'Nijmegen - Griftdijk', address: '6538 MZ 229, Nijmegen', category: 'werkplek_client' },
       { label: 'Wijchen - Plus R.B.', address: '6603 KT 192, Wijchen', category: 'werkplek_client' },
-      { label: 'Wijchen - Huisbezoek R.B.', address: '6601 CX 86, Wijchen', category: 'werkplek_client' },
+      { label: 'Wijchen - Huisbezoek R.B.', address: '6601 CX 86, Wijchen', category: 'werkplek_client', defaultPurpose: 'Werkbezoek Plus R.B.' },
       { label: 'Wijchen - M.v.B.', address: '6604 BE 4, Wijchen', category: 'werkplek_client' },
       { label: 'Groesbeek', address: '6562 DE 2, Groesbeek', category: 'werkplek_client' },
-      { label: 'Overasselt - Lage Hof', address: '6611 KA 5, Overasselt', category: 'werkplek_client' },
-      { label: 'Nijmegen - Hofmans C.N.', address: '6546 AS 1108, Nijmegen', category: 'werkplek_client' },
+      { label: 'Overasselt - Lage Hof', address: '6611 KA 5, Overasselt', category: 'werkplek_client', defaultPurpose: 'Werkbezoek Lage Hof K.v.E.' },
+      { label: 'Nijmegen - Hofmans C.N.', address: '6546 AS 1108, Nijmegen', category: 'werkplek_client', defaultPurpose: 'Werkbezoek Hofmans C.N.' },
       { label: 'Nijmegen - Dukenburg', address: '6546 AS 1108, Dukenburg, Nijmegen', category: 'werkplek_client' },
       { label: 'Wijchen - LAN party M.v.B.', address: '6602 HX 6, Wijchen', category: 'werkplek_client' }
     ];
@@ -717,6 +876,9 @@
         const exists = state.addressBook.find(entry => normalizeAddress(entry.address) === norm);
         if (!exists) {
           state.addressBook.push({ id: crypto.randomUUID(), ...item, favorite: false });
+          added = true;
+        } else if (item.defaultPurpose && !exists.defaultPurpose) {
+          exists.defaultPurpose = item.defaultPurpose;
           added = true;
         }
       });
@@ -732,11 +894,13 @@
       document.getElementById('calcDistanceBtn').addEventListener('click', calculateDistanceOnly);
       document.getElementById('addTripBtn').addEventListener('click', addTrip);
       document.getElementById('exportBtn').addEventListener('click', exportToExcel);
-      document.getElementById('exportMonthBtn').addEventListener('click', exportCurrentMonth);
+      document.getElementById('exportMonthBtn').addEventListener('click', exportSelectedMonth);
       document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
-      document.getElementById('periodFilter').addEventListener('change', e => {
-        activeFilter = e.target.value;
-        renderTrips();
+      els.exportMonthSelect.addEventListener('change', e => {
+        if (e.target.value) {
+          activeFilter = e.target.value;
+          renderTrips();
+        }
       });
       document.getElementById('exportAddressesBtn').addEventListener('click', exportAddressesJson);
       document.getElementById('clearAddressesBtn').addEventListener('click', clearAddresses);
@@ -751,6 +915,9 @@
           draftTripKm = 0;
           updateGoogleMapsRouteLink();
         });
+      });
+      els.purpose.addEventListener('input', () => {
+        if (els.purpose.value.trim() !== lastAutoPurpose) lastAutoPurpose = '';
       });
       els.deductionMode.addEventListener('change', () => {
         state.settings.deductionMode = normalizeDeductionMode(els.deductionMode.value);
@@ -794,8 +961,12 @@
           label: item.label || '',
           address: item.address || '',
           category: item.category || 'algemeen',
-          favorite: !!item.favorite
-        })) : []
+          favorite: !!item.favorite,
+          defaultPurpose: item.defaultPurpose || ''
+        })) : [],
+        routeCache: raw.routeCache && typeof raw.routeCache === 'object'
+          ? Object.fromEntries(Object.entries(raw.routeCache).map(([key, value]) => [key, Number(value || 0)]).filter(([, value]) => value > 0))
+          : {}
       };
 
       merged.settings.deductionMode = normalizeDeductionMode(merged.settings.deductionMode);
@@ -850,17 +1021,43 @@
       if (!doc.exists) return null;
       const data = doc.data();
       if (!data || !data.state) return null;
+      lastLoadedUpdatedAt = data.updatedAt ? data.updatedAt.toMillis() : null;
       return data.state;
+    }
+
+    function showConflictBanner() {
+      document.getElementById('conflictBanner').classList.add('show');
+    }
+
+    function hideConflictBanner() {
+      document.getElementById('conflictBanner').classList.remove('show');
     }
 
     async function saveRemoteState() {
       if (!firebaseSyncEnabled || !firestoreDb || remoteSaveInProgress) return;
       remoteSaveInProgress = true;
       try {
+        // Conflict check: read current remote updatedAt before writing
+        if (lastLoadedUpdatedAt !== null) {
+          const check = await firestoreDb.collection(FIRESTORE_COLLECTION).doc(FIRESTORE_DOCUMENT).get();
+          if (check.exists) {
+            const remoteData = check.data();
+            const remoteTs = remoteData && remoteData.updatedAt ? remoteData.updatedAt.toMillis() : null;
+            if (remoteTs !== null && remoteTs > lastLoadedUpdatedAt) {
+              // Remote is newer — conflict detected. Save anyway but warn user.
+              showConflictBanner();
+            }
+          }
+        }
         await firestoreDb.collection(FIRESTORE_COLLECTION).doc(FIRESTORE_DOCUMENT).set({
           state,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        // Update our reference timestamp after successful save
+        const saved = await firestoreDb.collection(FIRESTORE_COLLECTION).doc(FIRESTORE_DOCUMENT).get();
+        if (saved.exists && saved.data().updatedAt) {
+          lastLoadedUpdatedAt = saved.data().updatedAt.toMillis();
+        }
       } catch (error) {
         console.error('Opslaan naar Firebase mislukt:', error);
       } finally {
@@ -1013,9 +1210,29 @@
       if (target === 'to') {
         els.toPostal.value = parts.postal;
         els.toCity.value = parts.city;
+        applyAddressPurposeSuggestion(address);
       }
       draftTripKm = 0;
       updateGoogleMapsRouteLink();
+    }
+
+    function applyAddressPurposeSuggestion(address) {
+      const item = state.addressBook.find(entry => normalizeAddress(entry.address) === normalizeAddress(address));
+      const suggestedPurpose = String(item?.defaultPurpose || '').trim();
+      const currentPurpose = els.purpose.value.trim();
+
+      if (!suggestedPurpose) {
+        if (currentPurpose && currentPurpose === lastAutoPurpose) {
+          els.purpose.value = '';
+        }
+        lastAutoPurpose = '';
+        return;
+      }
+
+      if (!currentPurpose || currentPurpose === lastAutoPurpose) {
+        els.purpose.value = suggestedPurpose;
+        lastAutoPurpose = suggestedPurpose;
+      }
     }
 
     function setSettingsAddress(target, address) {
@@ -1039,13 +1256,15 @@
         existing.address = item.address || existing.address;
         existing.category = item.category || existing.category;
         existing.favorite = item.favorite ?? existing.favorite;
+        existing.defaultPurpose = item.defaultPurpose || existing.defaultPurpose || '';
       } else {
         list.push({
           id: crypto.randomUUID(),
           label: item.label || item.address,
           address: item.address,
           category: item.category || 'algemeen',
-          favorite: !!item.favorite
+          favorite: !!item.favorite,
+          defaultPurpose: item.defaultPurpose || ''
         });
       }
       if (!silent) persist();
@@ -1065,7 +1284,25 @@
       showStatus('Instellingen opgeslagen.', 'ok');
     }
 
+    function routeCacheKey(fromAddress, toAddress) {
+      return [normalizeAddress(fromAddress), normalizeAddress(toAddress)].sort().join(' <> ');
+    }
+
     async function routeKm(fromAddress, toAddress) {
+      const cachedKm = state.routeCache?.[routeCacheKey(fromAddress, toAddress)];
+      if (cachedKm) return cachedKm;
+
+      const existingTrip = state.trips.find(trip => (
+        routeCacheKey(trip.fromAddress, trip.toAddress) === routeCacheKey(fromAddress, toAddress)
+        && Number(trip.grossKm || 0) > 0
+      ));
+      if (existingTrip) {
+        const kmFromTrip = Math.round(Number(existingTrip.grossKm || 0) * 10) / 10;
+        state.routeCache[routeCacheKey(fromAddress, toAddress)] = kmFromTrip;
+        persist();
+        return kmFromTrip;
+      }
+
       const apiKey = (state.settings.googleMapsApiKey || '').trim();
       if (!apiKey) throw new Error('Vul eerst een Google Maps API key in bij Instellingen.');
 
@@ -1094,7 +1331,10 @@
       }
       const route = data.routes && data.routes[0];
       if (!route) throw new Error('Geen route gevonden.');
-      return Math.round(((route.distanceMeters || 0) / 1000) * 10) / 10;
+      const km = Math.round(((route.distanceMeters || 0) / 1000) * 10) / 10;
+      state.routeCache[routeCacheKey(fromAddress, toAddress)] = km;
+      persist();
+      return km;
     }
 
     async function calculateCommuteDistance() {
@@ -1250,6 +1490,7 @@
       const city = els.addressCity.value.trim();
       const address = buildAddress(postal, city);
       const category = els.addressCategory.value;
+      const defaultPurpose = els.addressDefaultPurpose.value.trim();
       const favorite = els.addressFavorite.checked;
       const missing = [];
       if (!label) missing.push('label');
@@ -1258,13 +1499,14 @@
         showStatus(`Ontbreekt: ${missing.join(', ')}.`, 'err');
         return;
       }
-      upsertAddress(state.addressBook, { label, address, category, favorite });
+      upsertAddress(state.addressBook, { label, address, category, defaultPurpose, favorite });
       renderAddressBook();
       renderQuickChoices();
       els.addressLabel.value = '';
       els.addressPostal.value = '';
       els.addressCity.value = '';
       els.addressCategory.value = 'algemeen';
+      els.addressDefaultPurpose.value = '';
       els.addressFavorite.checked = false;
       showStatus('Adres opgeslagen in het adresboek.', 'ok');
     }
@@ -1314,11 +1556,14 @@
         return;
       }
 
+      const defaultPurpose = card.querySelector('[data-field="defaultPurpose"]').value.trim();
+
       const previousAddress = item.address;
       item.label = label;
       item.address = address;
       item.category = category;
       item.favorite = favorite;
+      item.defaultPurpose = defaultPurpose;
 
       if (state.settings.homeAddress === previousAddress) state.settings.homeAddress = address;
       if (state.settings.workAddress === previousAddress) state.settings.workAddress = address;
@@ -1516,6 +1761,10 @@
                   <option value="thuisbezoek_client"${item.category === 'thuisbezoek_client' ? ' selected' : ''}>Thuisbezoek Client</option>
                 </select>
               </div>
+              <div class="field full">
+                <label>Standaard doel</label>
+                <input class="table-input" data-field="defaultPurpose" value="${escapeHtml(item.defaultPurpose || '')}" placeholder="Bijv. Werkbezoek" />
+              </div>
             </div>
             <div class="toggle-row spacer-top">
               <label><input data-field="favorite" type="checkbox"${item.favorite ? ' checked' : ''} /> Favoriet / snelle keuze</label>
@@ -1533,6 +1782,7 @@
               <div>
                 <div class="address-name">${escapeHtml(item.label)}</div>
                 <div class="address-meta">${escapeHtml(item.address)}</div>
+                ${item.defaultPurpose ? `<div class="address-meta" style="color:var(--accent-muted,#666);font-size:0.82em;">Doel: ${escapeHtml(item.defaultPurpose)}</div>` : ''}
               </div>
               <div class="badge">${escapeHtml(item.category || 'algemeen')}</div>
             </div>
@@ -1624,27 +1874,65 @@
       return state.trips.filter(trip => trip.date && trip.date.startsWith(activeFilter));
     }
 
-    function renderPeriodFilter() {
-      const select = document.getElementById('periodFilter');
-      const months = [...new Set(
+    function tripMonths() {
+      return [...new Set(
         state.trips.map(t => t.date ? t.date.slice(0, 7) : null).filter(Boolean)
-      )].sort().reverse();
-      select.innerHTML = '<option value="all">Alle ritten</option>';
-      months.forEach(m => {
-        const [year, month] = m.split('-');
-        const label = new Date(Number(year), Number(month) - 1, 1)
-          .toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = label;
-        select.appendChild(opt);
-      });
+      )].sort();
+    }
+
+    function monthLabel(monthKey, style = 'short') {
+      const [year, month] = monthKey.split('-');
+      return new Date(Number(year), Number(month) - 1, 1)
+        .toLocaleDateString('nl-NL', { month: style, year: style === 'long' ? 'numeric' : undefined })
+        .replace('.', '');
+    }
+
+    function renderMonthControls() {
+      const months = tripMonths();
       if (!months.includes(activeFilter) && activeFilter !== 'all') activeFilter = 'all';
-      select.value = activeFilter;
+
+      els.monthTabs.innerHTML = '';
+      const allButton = document.createElement('button');
+      allButton.type = 'button';
+      allButton.className = `month-tab${activeFilter === 'all' ? ' active' : ''}`;
+      allButton.textContent = 'Alles';
+      allButton.addEventListener('click', () => {
+        activeFilter = 'all';
+        renderTrips();
+      });
+      els.monthTabs.appendChild(allButton);
+
+      months.forEach(monthKey => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `month-tab${activeFilter === monthKey ? ' active' : ''}`;
+        button.textContent = monthLabel(monthKey);
+        button.title = monthLabel(monthKey, 'long');
+        button.addEventListener('click', () => {
+          activeFilter = monthKey;
+          renderTrips();
+        });
+        els.monthTabs.appendChild(button);
+      });
+
+      els.exportMonthSelect.innerHTML = '';
+      months.forEach(monthKey => {
+        const opt = document.createElement('option');
+        opt.value = monthKey;
+        opt.textContent = monthLabel(monthKey, 'long');
+        els.exportMonthSelect.appendChild(opt);
+      });
+
+      const selectedMonth = activeFilter !== 'all' && months.includes(activeFilter)
+        ? activeFilter
+        : months[months.length - 1];
+      if (selectedMonth) els.exportMonthSelect.value = selectedMonth;
+      els.exportMonthSelect.disabled = months.length === 0;
+      document.getElementById('exportMonthBtn').disabled = months.length === 0;
     }
 
     function renderTrips() {
-      renderPeriodFilter();
+      renderMonthControls();
       const trips = filteredTrips();
       const totals = trips.reduce((acc, trip) => {
         acc.gross += Number(trip.grossKm || 0);
@@ -1662,7 +1950,7 @@
       if (!trips.length) {
         const tr = document.createElement('tr');
         const msg = activeFilter === 'all' ? 'Nog geen ritten toegevoegd.' : 'Geen ritten in deze periode.';
-        tr.innerHTML = `<td colspan="8" class="muted">${msg}</td>`;
+        tr.innerHTML = `<td colspan="8" class="muted" data-label="">${msg}</td>`;
         els.tripTableBody.appendChild(tr);
         return;
       }
@@ -1673,16 +1961,16 @@
           const from = splitAddress(trip.fromAddress);
           const to = splitAddress(trip.toAddress);
           tr.innerHTML = `
-            <td><input class="table-input" data-field="date" type="date" value="${escapeHtml(trip.date)}" /></td>
-            <td>
+            <td data-label="Datum"><input class="table-input" data-field="date" type="date" value="${escapeHtml(trip.date)}" /></td>
+            <td data-label="Van">
               <input class="table-input" data-field="fromPostal" placeholder="Postcode + huisnr" value="${escapeHtml(from.postal)}" />
               <input class="table-input" data-field="fromCity" placeholder="Woonplaats" value="${escapeHtml(from.city)}" style="margin-top:6px;" />
             </td>
-            <td>
+            <td data-label="Naar">
               <input class="table-input" data-field="toPostal" placeholder="Postcode + huisnr" value="${escapeHtml(to.postal)}" />
               <input class="table-input" data-field="toCity" placeholder="Woonplaats" value="${escapeHtml(to.city)}" style="margin-top:6px;" />
             </td>
-            <td>
+            <td data-label="Doel">
               <textarea class="table-textarea" data-field="purpose" placeholder="Doel">${escapeHtml(trip.purpose)}</textarea>
               <select class="table-select" data-field="type" style="margin-top:6px;">
                 <option value="dienstreis"${trip.type === 'dienstreis' ? ' selected' : ''}>Dienstreis</option>
@@ -1690,10 +1978,10 @@
                 <option value="gezondheidsreis"${trip.type === 'gezondheidsreis' ? ' selected' : ''}>Gezondheidsreis</option>
               </select>
             </td>
-            <td><input class="table-input" data-field="grossKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.grossKm ?? ''))}" /></td>
-            <td><input class="table-input" data-field="deductionKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.deductionKm ?? ''))}" /></td>
-            <td><strong>${fmtNumber(Math.max(0, Number(trip.grossKm || 0) - Number(trip.deductionKm || 0)))}</strong><div class="small muted">Netto wordt opnieuw berekend</div></td>
-            <td>
+            <td data-label="Bruto km"><input class="table-input" data-field="grossKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.grossKm ?? ''))}" /></td>
+            <td data-label="WW aftrek"><input class="table-input" data-field="deductionKm" type="number" min="0" step="0.1" value="${escapeHtml(String(trip.deductionKm ?? ''))}" /></td>
+            <td data-label="Netto km"><strong>${fmtNumber(Math.max(0, Number(trip.grossKm || 0) - Number(trip.deductionKm || 0)))}</strong><div class="small muted">Netto wordt opnieuw berekend</div></td>
+            <td data-label="">
               <div class="table-actions">
                 <button class="btn-primary small-btn" data-action="save">Opslaan</button>
                 <button class="btn-ghost small-btn" data-action="cancel">Annuleren</button>
@@ -1704,16 +1992,23 @@
           tr.querySelector('[data-action="cancel"]').addEventListener('click', cancelEditTrip);
         } else {
           tr.innerHTML = `
-            <td>${formatDate(trip.date)}</td>
-            <td>${escapeHtml(trip.fromAddress)}</td>
-            <td>${escapeHtml(trip.toAddress)}</td>
-            <td>${escapeHtml(trip.purpose)}<div class="small muted">${escapeHtml(trip.type)}</div></td>
-            <td>${fmtNumber(trip.grossKm)}</td>
-            <td>${fmtNumber(trip.deductionKm)}</td>
-            <td><strong>${fmtNumber(trip.netKm)}</strong></td>
-            <td>
+            <td data-label="Datum">${formatDate(trip.date)}</td>
+            <td data-label="Van">${escapeHtml(trip.fromAddress)}</td>
+            <td data-label="Naar">${escapeHtml(trip.toAddress)}</td>
+            <td data-label="Doel">${escapeHtml(trip.purpose)}<div class="small muted">${escapeHtml(trip.type)}</div></td>
+            <td data-label="Bruto km">${fmtNumber(trip.grossKm)}</td>
+            <td data-label="WW aftrek">${fmtNumber(trip.deductionKm)}</td>
+            <td data-label="Netto km"><strong>${fmtNumber(trip.netKm)}</strong></td>
+            <td data-label="">
               <div class="table-actions">
-                <a class="table-link" href="${googleMapsRouteUrl(trip.fromAddress, trip.toAddress)}" target="_blank" rel="noopener noreferrer">Route</a>
+                <a class="table-link" href="${googleMapsRouteUrl(trip.fromAddress, trip.toAddress)}" target="_blank" rel="noopener noreferrer">
+                  <svg class="route-map-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 18l-6 3V6l6-3l6 3l6-3v15l-6 3l-6-3Z"></path>
+                    <path d="M9 3v15"></path>
+                    <path d="M15 6v15"></path>
+                  </svg>
+                  <span>Route</span>
+                </a>
                 <button class="btn-soft small-btn" data-action="edit">Bewerk</button>
                 <button class="btn-danger small-btn" data-action="delete">Verwijder</button>
               </div>
@@ -1797,11 +2092,15 @@
       showStatus('Excelbestand geëxporteerd.', 'ok');
     }
 
-    function exportCurrentMonth() {
-      const month = today.slice(0, 7);
+    function exportSelectedMonth() {
+      const month = els.exportMonthSelect.value;
+      if (!month) {
+        showStatus('Geen maand beschikbaar om te exporteren.', 'err');
+        return;
+      }
       const monthTrips = state.trips.filter(t => t.date && t.date.startsWith(month));
       if (!monthTrips.length) {
-        showStatus('Geen ritten gevonden voor de huidige maand.', 'err');
+        showStatus(`Geen ritten gevonden voor ${monthLabel(month, 'long')}.`, 'err');
         return;
       }
       exportToExcel(monthTrips, month);
@@ -1824,6 +2123,7 @@
       if (!files.length) return;
 
       let added = 0;
+      const purposeStats = new Map();
       for (const file of files) {
         const buf = await file.arrayBuffer();
         const wb = XLSX.read(buf, { type: 'array' });
@@ -1846,13 +2146,31 @@
                 label: address,
                 address,
                 category: 'algemeen',
-                favorite: false
+                favorite: false,
+                defaultPurpose: ''
               });
               added++;
             }
           }
+
+          const toPostal = String(row[3] || '').trim();
+          const toCity = String(row[4] || '').trim();
+          const purpose = String(row[5] || '').trim().replace(/\s+/g, ' ');
+          if (toPostal && toCity && purpose) {
+            const addressKey = normalizeAddress(`${toPostal}, ${toCity}`);
+            if (!purposeStats.has(addressKey)) purposeStats.set(addressKey, new Map());
+            const stats = purposeStats.get(addressKey);
+            stats.set(purpose, (stats.get(purpose) || 0) + 1);
+          }
         }
       }
+
+      state.addressBook.forEach(item => {
+        const stats = purposeStats.get(normalizeAddress(item.address));
+        if (!stats) return;
+        const ranked = [...stats.entries()].sort((a, b) => b[1] - a[1]);
+        if (ranked[0] && ranked[0][1] >= 2) item.defaultPurpose = ranked[0][0];
+      });
 
       if (added > 0) {
         persist();
