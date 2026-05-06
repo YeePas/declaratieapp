@@ -416,6 +416,8 @@
           <div class="actions">
             <button class="btn-primary" id="saveAddressBtn">Adres opslaan</button>
             <button class="btn-ghost" id="exportAddressesBtn">Exporteer adressen</button>
+            <button class="btn-ghost" id="importExcelAddressesBtn">Importeer uit declaratie-Excel</button>
+            <input id="importExcelAddressesInput" type="file" accept=".xlsx,.xls" multiple style="display:none;" />
             <button class="btn-danger" id="clearAddressesBtn">Wis adressen</button>
           </div>
           <p class="hint">De 5 snelkeuzes in het ritformulier komen uit je favorieten. Als er minder dan 5 favorieten zijn, worden andere gelabelde adressen aangevuld.</p>
@@ -594,7 +596,6 @@
     let saveAddrSource = null;
 
     els.tripDate.value = today;
-    initializeApp();
 
     function defaultState() {
       return {
@@ -665,6 +666,7 @@
     async function initializeApp() {
       wireEvents();
       hydrateForm();
+      seedAddresses();
       renderAll();
       updateGoogleMapsRouteLink();
 
@@ -675,6 +677,7 @@
         const remoteState = await loadRemoteState();
         if (remoteState) {
           state = normalizeState(remoteState);
+          seedAddresses();
           persistLocalOnly();
           renderAll();
           showStatus('Gegevens geladen vanuit Firebase.', 'ok');
@@ -688,6 +691,39 @@
         showStatus('Firebase is gekoppeld, maar gegevens laden mislukte. Lokale data blijft actief.', 'err');
       }
     }
+
+    const SEED_ADDRESS_LIST = [
+      { label: 'Standplaats Cuijk', address: '5431 SN 5, Cuijk', category: 'werkplek' },
+      { label: 'Nijmegen - Winselingseweg', address: '6541 AK 4L, Nijmegen', category: 'werkplek' },
+      { label: 'Nijmegen - Standplaats', address: '6533 HV 50, Nijmegen', category: 'werkplek' },
+      { label: 'Gennep', address: '6591 MD 12, Gennep', category: 'werkplek_client' },
+      { label: 'Molenhoek', address: '6584 BE 3, Molenhoek', category: 'werkplek_client' },
+      { label: 'Wijchen - Radboud boerderij', address: '6604 AP 1017, Wijchen', category: 'werkplek_client' },
+      { label: 'Nijmegen - Griftdijk', address: '6538 MZ 229, Nijmegen', category: 'werkplek_client' },
+      { label: 'Wijchen - Plus R.B.', address: '6603 KT 192, Wijchen', category: 'werkplek_client' },
+      { label: 'Wijchen - Huisbezoek R.B.', address: '6601 CX 86, Wijchen', category: 'werkplek_client' },
+      { label: 'Wijchen - M.v.B.', address: '6604 BE 4, Wijchen', category: 'werkplek_client' },
+      { label: 'Groesbeek', address: '6562 DE 2, Groesbeek', category: 'werkplek_client' },
+      { label: 'Overasselt - Lage Hof', address: '6611 KA 5, Overasselt', category: 'werkplek_client' },
+      { label: 'Nijmegen - Hofmans C.N.', address: '6546 AS 1108, Nijmegen', category: 'werkplek_client' },
+      { label: 'Nijmegen - Dukenburg', address: '6546 AS 1108, Dukenburg, Nijmegen', category: 'werkplek_client' },
+      { label: 'Wijchen - LAN party M.v.B.', address: '6602 HX 6, Wijchen', category: 'werkplek_client' }
+    ];
+
+    function seedAddresses() {
+      let added = false;
+      SEED_ADDRESS_LIST.forEach(item => {
+        const norm = normalizeAddress(item.address);
+        const exists = state.addressBook.find(entry => normalizeAddress(entry.address) === norm);
+        if (!exists) {
+          state.addressBook.push({ id: crypto.randomUUID(), ...item, favorite: false });
+          added = true;
+        }
+      });
+      if (added) persist();
+    }
+
+    initializeApp();
 
     function wireEvents() {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
@@ -704,6 +740,8 @@
       });
       document.getElementById('exportAddressesBtn').addEventListener('click', exportAddressesJson);
       document.getElementById('clearAddressesBtn').addEventListener('click', clearAddresses);
+      document.getElementById('importExcelAddressesBtn').addEventListener('click', () => document.getElementById('importExcelAddressesInput').click());
+      document.getElementById('importExcelAddressesInput').addEventListener('change', importAddressesFromExcel);
       document.getElementById('importJsonBtn').addEventListener('click', () => els.importJsonInput.click());
       document.getElementById('clearBtn').addEventListener('click', clearTrips);
       document.getElementById('saveAddressBtn').addEventListener('click', saveAddressBookItem);
@@ -1718,21 +1756,22 @@
           to.city,
           trip.purpose,
           trip.grossKm,
-          trip.deductionKm,
+          trip.deductionKm || null,
           trip.netKm
         ];
         rowIdx += 1;
       }
-      rows[rowIdx + 2] = ['', '', '', '', '', 'TOTAAL AANTAL KILOMETERS', '', '', { f: `SUM(I7:I${Math.max(7, rowIdx - 1)})` }];
-      rows[rowIdx + 4] = ['Tarieven verschillende soorten reisbewegingen:'];
-      rows[rowIdx + 6] = ['Dienstreizen:  ', '', `€ ${Number(state.settings.rate || 0.30).toFixed(2).replace('.', ',')} /km`];
-      rows[rowIdx + 7] = ['Studiereizen:  ', '', '€ 0,23 /km'];
-      rows[rowIdx + 8] = ['Gezondheidsreizen: ', '', '€ 0,23 /km'];
+      rows[44] = ['', '', '', '', '', 'TOTAAL AANTAL KILOMETERS', '', '', { f: 'SUM(I7:I44)' }];
+      rows[46] = ['Tarieven verschillende soorten reisbewegingen:'];
+      rows[48] = ['Dienstreizen:  ', '', `€ ${Number(state.settings.rate || 0.30).toFixed(2).replace('.', ',')} /km`];
+      rows[49] = ['Studiereizen:  ', '', '€ 0,23 /km'];
+      rows[50] = ['Gezondheidsreizen: ', '', '€ 0,23 /km'];
+      rows[52] = ['Op je salarisstrook vind je het aantal gedeclareerde kilometers terug, inclusief de bijbehorende tarieven.'];
       return rows;
     }
 
     function exportToExcel(tripsOverride, filenameSuffix) {
-      const exportTrips = tripsOverride || state.trips;
+      const exportTrips = (Array.isArray(tripsOverride) ? tripsOverride : null) || state.trips;
       if (!exportTrips.length) {
         showStatus('Voeg eerst minimaal één rit toe.', 'err');
         return;
@@ -1777,6 +1816,52 @@
       a.click();
       URL.revokeObjectURL(url);
       showStatus('JSON backup gedownload.', 'ok');
+    }
+
+    async function importAddressesFromExcel(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+
+      let added = 0;
+      for (const file of files) {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // Data rows start at index 6 (row 7). Columns: 0=datum,1=postal_from,2=city_from,3=postal_to,4=city_to
+        for (let i = 6; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row[0]) break; // stop at empty datum
+          for (const [pi, ci] of [[1,2],[3,4]]) {
+            const postal = String(row[pi] || '').trim();
+            const city   = String(row[ci] || '').trim();
+            if (!postal || !city) continue;
+            // Combine into app address format
+            const address = `${postal}, ${city}`;
+            const existing = state.addressBook.find(e => normalizeAddress(e.address) === normalizeAddress(address));
+            if (!existing) {
+              state.addressBook.push({
+                id: crypto.randomUUID(),
+                label: address,
+                address,
+                category: 'algemeen',
+                favorite: false
+              });
+              added++;
+            }
+          }
+        }
+      }
+
+      if (added > 0) {
+        persist();
+        renderAddressBook();
+        renderQuickChoices();
+        showStatus(`${added} nieuwe adres${added === 1 ? '' : 'sen'} geïmporteerd uit ${files.length} bestand${files.length === 1 ? '' : 'en'}.`, 'ok');
+      } else {
+        showStatus('Geen nieuwe adressen gevonden (al aanwezig of leeg bestand).', 'ok');
+      }
     }
 
     function exportAddressesJson() {
