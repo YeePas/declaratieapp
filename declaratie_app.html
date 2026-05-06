@@ -173,6 +173,9 @@
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th, td { padding:10px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
     th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.03em; position:sticky; top:0; background:white; }
+    .trip-row { background:var(--day-color, #fff); }
+    .trip-row td:first-child { box-shadow: inset 4px 0 0 var(--day-accent, transparent); }
+    .trip-row.editing { outline:2px solid rgba(35,86,216,0.18); outline-offset:-2px; }
     .table-wrap { max-height: 540px; overflow:auto; }
     .small-btn { padding:8px 10px; border-radius:10px; font-size:12px; }
     .table-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -190,6 +193,11 @@
     .address-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
     .address-name { font-weight:800; }
     .address-meta { color:var(--muted); font-size:13px; margin-top:4px; }
+    .address-tools { display:flex; align-items:flex-start; gap:8px; flex:0 0 auto; }
+    .icon-only-btn {
+      width:32px; height:32px; padding:0; border-radius:999px;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
     .badge { display:inline-flex; padding:5px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#eef4ff; color:#2356d8; }
     .toggle-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .inline-note { font-size:12px; color:var(--muted); }
@@ -269,8 +277,10 @@
       tbody { display:flex; flex-direction:column; gap:10px; }
       tr {
         border:1px solid var(--line); border-radius:14px; padding:12px;
-        background:#fff; box-shadow:0 8px 18px rgba(16,24,40,0.06);
+        background:var(--day-color, #fff); box-shadow:0 8px 18px rgba(16,24,40,0.06);
       }
+      .trip-row td:first-child { box-shadow:none; }
+      .trip-row { border-left:4px solid var(--day-accent, var(--line)); }
       td {
         display:grid; grid-template-columns:96px minmax(0, 1fr); gap:10px;
         padding:7px 0; border-bottom:0; align-items:start;
@@ -529,7 +539,7 @@
           <div class="section-title">
             <div>
               <h2>Adres toevoegen</h2>
-              <p>Gebruik labels zoals Thuis, Werk, Kantoor of Cliënt 1.</p>
+                <p>Gebruik labels zoals Thuis, Standplaats, Kantoor of Cliënt 1.</p>
             </div>
           </div>
           <div class="fields">
@@ -983,7 +993,7 @@
         favorite: true
       }, true);
       upsertAddress(targetState.addressBook, {
-        label: 'Werk',
+        label: 'Standplaats',
         address: targetState.settings.workAddress || '',
         category: 'werk',
         favorite: true
@@ -1127,9 +1137,34 @@
       return Number(value || 0).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     }
 
+    function roundRouteKmFromMeters(meters) {
+      const km = Number(meters || 0) / 1000;
+      return Math.ceil((km * 10) - 1e-9) / 10;
+    }
+
     function formatDate(dateStr) {
       if (!dateStr) return '';
       return new Date(dateStr + 'T00:00:00').toLocaleDateString('nl-NL');
+    }
+
+    function dayColorIndex(dateStr) {
+      if (!dateStr) return 0;
+      return dateStr.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 6;
+    }
+
+    function applyTripDayColor(row, dateStr) {
+      const colors = [
+        ['#f8fbff', '#b8cdfa'],
+        ['#fffaf2', '#f1cf97'],
+        ['#f6fdf9', '#a9dec1'],
+        ['#fff8fb', '#efb4ca'],
+        ['#f8f7ff', '#c7bef6'],
+        ['#f7fcfd', '#a9dce3']
+      ];
+      const [bg, accent] = colors[dayColorIndex(dateStr)];
+      row.classList.add('trip-row');
+      row.style.setProperty('--day-color', bg);
+      row.style.setProperty('--day-accent', accent);
     }
 
     function escapeHtml(value) {
@@ -1285,23 +1320,12 @@
     }
 
     function routeCacheKey(fromAddress, toAddress) {
-      return [normalizeAddress(fromAddress), normalizeAddress(toAddress)].sort().join(' <> ');
+      return `v2:${normalizeAddress(fromAddress)} -> ${normalizeAddress(toAddress)}`;
     }
 
-    async function routeKm(fromAddress, toAddress) {
+    async function routeKm(fromAddress, toAddress, options = {}) {
       const cachedKm = state.routeCache?.[routeCacheKey(fromAddress, toAddress)];
-      if (cachedKm) return cachedKm;
-
-      const existingTrip = state.trips.find(trip => (
-        routeCacheKey(trip.fromAddress, trip.toAddress) === routeCacheKey(fromAddress, toAddress)
-        && Number(trip.grossKm || 0) > 0
-      ));
-      if (existingTrip) {
-        const kmFromTrip = Math.round(Number(existingTrip.grossKm || 0) * 10) / 10;
-        state.routeCache[routeCacheKey(fromAddress, toAddress)] = kmFromTrip;
-        persist();
-        return kmFromTrip;
-      }
+      if (cachedKm && !options.forceRefresh) return cachedKm;
 
       const apiKey = (state.settings.googleMapsApiKey || '').trim();
       if (!apiKey) throw new Error('Vul eerst een Google Maps API key in bij Instellingen.');
@@ -1331,7 +1355,7 @@
       }
       const route = data.routes && data.routes[0];
       if (!route) throw new Error('Geen route gevonden.');
-      const km = Math.round(((route.distanceMeters || 0) / 1000) * 10) / 10;
+      const km = roundRouteKmFromMeters(route.distanceMeters);
       state.routeCache[routeCacheKey(fromAddress, toAddress)] = km;
       persist();
       return km;
@@ -1464,7 +1488,6 @@
       const existing = state.addressBook.find(item => normalizeAddress(item.address) === normalizeAddress(address));
       if (!existing) {
         upsertAddress(state.addressBook, {
-          label: address,
           address,
           category: category || 'algemeen',
           favorite: false
@@ -1500,8 +1523,7 @@
         return;
       }
       upsertAddress(state.addressBook, { label, address, category, defaultPurpose, favorite });
-      renderAddressBook();
-      renderQuickChoices();
+      refreshAddressViews();
       els.addressLabel.value = '';
       els.addressPostal.value = '';
       els.addressCity.value = '';
@@ -1521,8 +1543,7 @@
       const idx = state.addressBook.indexOf(item);
       state.addressBook = state.addressBook.filter(entry => entry.id !== id);
       persist();
-      renderAddressBook();
-      renderQuickChoices();
+      refreshAddressViews();
       pendingUndo = () => { state.addressBook.splice(idx, 0, item); };
       showUndoBar(`Adres "${item.label}" verwijderd.`);
       showStatus('Adres verwijderd.', 'ok');
@@ -1571,7 +1592,8 @@
       editingAddressId = null;
       addSystemAddresses(state);
       persist();
-      renderAll();
+      hydrateForm();
+      refreshAddressViews();
       showStatus('Adres bijgewerkt.', 'ok');
     }
 
@@ -1597,8 +1619,16 @@
       if (!item) return;
       item.favorite = !item.favorite;
       persist();
+      refreshAddressViews();
+    }
+
+    function refreshAddressViews() {
       renderAddressBook();
       renderQuickChoices();
+      const pickerBackdrop = document.getElementById('addrPickerBackdrop');
+      if (pickerBackdrop?.classList.contains('show')) {
+        renderAddrPickerList(document.getElementById('addrPickerSearch').value);
+      }
     }
 
     function getQuickAddresses() {
@@ -1784,14 +1814,21 @@
                 <div class="address-meta">${escapeHtml(item.address)}</div>
                 ${item.defaultPurpose ? `<div class="address-meta" style="color:var(--accent-muted,#666);font-size:0.82em;">Doel: ${escapeHtml(item.defaultPurpose)}</div>` : ''}
               </div>
-              <div class="badge">${escapeHtml(item.category || 'algemeen')}</div>
+              <div class="address-tools">
+                <button class="btn-soft icon-only-btn" data-action="edit" title="Adres bewerken" aria-label="Adres bewerken">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1l1-4L16.5 3.5Z"></path>
+                  </svg>
+                </button>
+                <div class="badge">${escapeHtml(item.category || 'algemeen')}</div>
+              </div>
             </div>
             <div class="actions">
               <button class="btn-soft small-btn" data-action="from">Als vertrek</button>
               <button class="btn-soft small-btn" data-action="to">Als bestemming</button>
               <button class="btn-ghost small-btn" data-action="home">Maak thuisadres</button>
               <button class="btn-ghost small-btn" data-action="work">Maak standplaats</button>
-              <button class="btn-soft small-btn" data-action="edit">Bewerk</button>
               <button class="btn-ghost small-btn" data-action="favorite">${item.favorite ? 'Favoriet uit' : 'Favoriet aan'}</button>
               <button class="btn-danger small-btn" data-action="delete">Verwijder</button>
             </div>
@@ -1829,6 +1866,24 @@
     function cancelEditTrip() {
       editingTripId = null;
       renderTrips();
+    }
+
+    async function recalculateTrip(id) {
+      const trip = state.trips.find(item => item.id === id);
+      if (!trip) return;
+      try {
+        showStatus('Ritafstand wordt opnieuw berekend...', 'ok');
+        const grossKm = await routeKm(trip.fromAddress, trip.toAddress, { forceRefresh: true });
+        const deductionKm = computeDeduction(trip.fromAddress, trip.toAddress);
+        trip.grossKm = Math.round(grossKm * 10) / 10;
+        trip.deductionKm = Math.round(deductionKm * 10) / 10;
+        trip.netKm = Math.max(0, Math.round((trip.grossKm - trip.deductionKm) * 10) / 10);
+        persist();
+        renderTrips();
+        showStatus(`Rit herberekend: ${fmtNumber(trip.netKm)} netto km.`, 'ok');
+      } catch (error) {
+        showStatus(error.message, 'err');
+      }
     }
 
     function saveTripEdit(id, row) {
@@ -1957,7 +2012,9 @@
 
       trips.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(trip => {
         const tr = document.createElement('tr');
+        applyTripDayColor(tr, trip.date);
         if (editingTripId === trip.id) {
+          tr.classList.add('editing');
           const from = splitAddress(trip.fromAddress);
           const to = splitAddress(trip.toAddress);
           tr.innerHTML = `
@@ -2009,11 +2066,13 @@
                   </svg>
                   <span>Route</span>
                 </a>
+                <button class="btn-ghost small-btn" data-action="recalculate">Herbereken</button>
                 <button class="btn-soft small-btn" data-action="edit">Bewerk</button>
                 <button class="btn-danger small-btn" data-action="delete">Verwijder</button>
               </div>
             </td>
           `;
+          tr.querySelector('[data-action="recalculate"]').addEventListener('click', () => recalculateTrip(trip.id));
           tr.querySelector('[data-action="edit"]').addEventListener('click', () => startEditTrip(trip.id));
           tr.querySelector('[data-action="delete"]').addEventListener('click', () => removeTrip(trip.id));
         }
